@@ -1,0 +1,4030 @@
+CAREER PLUS API
+ Back to top
+概要
+
+はじめに
+
+利用方法
+
+更新履歴
+
+準備
+
+APIのFQDN
+
+APIキーの発行
+
+認可
+
+アクセストークンについて
+
+トークンエンドポイント
+
+共通
+
+レスポンス形式
+
+エラーコード
+
+マスタ
+
+コードマスタ
+
+コードマスタ一覧取得
+
+コードマスタ詳細取得
+
+リソース定義
+
+リソース定義について
+
+- 関連リソース
+
+取得
+
+リソースについて
+
+検索
+
+- 比較方法
+
+- ネスト
+
+取得
+
+登録
+
+更新
+
+削除
+
+リソース（求職者）
+
+求職者
+検索
+
+取得
+
+登録
+
+更新
+
+削除
+
+求職者職歴
+検索
+
+取得
+
+登録
+
+更新
+
+削除
+
+求職者対応履歴
+検索
+
+取得
+
+登録
+
+更新
+
+削除
+
+リソース（企業）
+
+企業
+検索
+
+取得
+
+登録
+
+更新
+
+削除
+
+企業対応履歴
+検索
+
+取得
+
+登録
+
+更新
+
+削除
+
+部署
+検索
+
+取得
+
+登録
+
+更新
+
+削除
+
+リソース（求人）
+
+求人
+検索
+
+取得
+
+登録
+
+更新
+
+削除
+
+リソース（求職者候補）
+
+求職者候補
+検索
+
+取得
+
+登録
+
+更新
+
+削除
+
+リソース（進捗）
+
+進捗
+検索
+
+取得
+
+登録
+
+更新
+
+削除
+
+進捗履歴
+検索
+
+取得
+
+登録
+
+更新
+
+削除
+
+リソース（ファイル）
+
+ファイル
+検索
+
+取得
+
+登録
+
+削除
+
+CAREER PLUS API
+概要 ¶
+はじめに ¶
+
+CAREER PLUSのAPI機能は、求職者、企業、求人、進捗などの情報の追加、更新、削除、取得操作をHTTPを利用して提供するものです。
+これにより、エントリーページや求人掲載ページ、マイページの作成や他システムとの連携をお客様自身で開発出来るようになります。
+
+利用方法 ¶
+
+ブラウザから直接APIを実行しないようお願い致します。
+
+ブラウザから直接APIを実行する場合、APIキーをブラウザに保持する実装となります。
+
+その場合、APIキーが漏洩し、第三者が本来の目的外でAPIを実行することが可能となります。
+
+例）Ajaxを利用したブラウザ内での非同期通信等一度サーバーへリクエストし、サーバーからAPIを実行して頂くようお願い致します。
+
+機械的に大量のリクエストを実行しないようお願い致します。
+
+例）パフォーマンステスト等
+
+1分間あたり240リクエストを超える場合、APIサービスを停止させて頂く可能性がございます。
+何卒ご了承くださいませ。
+
+更新履歴 ¶
+
+version
+update_at
+changes_note
+
+v2.0.0
+2021.04.28
+新規作成
+
+v2.0.1
+2023.01.25
+求職者候補.登録API（/v1/ext2/wrkcareer/）
+サンクスメール送信機能を追加
+
+v2.0.2
+2023.05.24
+企業.部署.登録API（/v1/ext2/department/）
+企業.部署.更新API（/v1/ext2/department/{id}）
+部署担当者を5名まで登録できるように仕様変更
+
+v2.0.3
+2024.02.15
+「APIのFQDN」の記載を追加
+
+v2.0.4
+2025.09.17
+リソース定義のvalidationRuleにonlyEmailを追加
+※既に項目が存在していなかった為、実態に合わせてdomainCheckの記載を削除修正
+
+準備 ¶
+APIのFQDN ¶
+
+APIのFQDNは下記となります。
+
+https://api.careerplus.jp
+
+使用例
+
+https://api.careerplus.jp/v1/auth/token
+
+APIキーの発行 ¶
+
+「マスタ管理画面＞その他設定」にAPIキー管理画面へのボタンが表示されます。
+APIキー管理画面を開き、APIキーの作成を行ってください。
+
+APIキー名
+
+APIキーを識別するためのラベルです。最大20文字で他のAPIキーと重複しない名前を指定してください。
+
+操作許可リスト
+
+アクセス出来る情報と操作権限をAPIキー毎に設定します。許可されない情報へのアクセス、操作は出来ません。
+各エンドポイント毎に必要となる権限が設定されていますので、リファレンスで確認してください。
+
+IPアドレス制限
+
+APIのエンドポイントへアクセス出来るIPアドレスをAPIキー毎に設定出来ます。設定をしない場合、全てのIPアドレスからアクセス可能です。
+IPアドレスははCIDR表記を使用して指定します。単一のIPを指定する場合でも「/32」まで入力してください。
+
+認可 ¶
+アクセストークンについて ¶
+
+各エンドポイントへのリクエストには、アクセストークン（APIキー≠アクセストークン）が必要となります。
+/v1/ext/まはた/v1/ext2/から始まるエンドポイントへのリクエストには以下のヘッダを設定してください。
+
+Authorization: Bearer <アクセストークン>
+
+アクセストークンは、トークンエンドポイントを使用し、取得することが出来ます。
+
+トークンエンドポイント  ¶
+トークンエンドポイント
+POST/v1/auth/token
+APIキーまたは、リフレッシュトークンを使用し、アクセストークンを取得することが出来ます。
+アクセストークンは60分間有効です。
+
+APIキーを使用する場合:
+
+{
+  "grantType": "api_key",
+  "apiKey": "xxxxx",
+}
+
+リフレッシュトークンを使用する場合:
+
+{
+  "grantType": "refresh_token",
+  "refreshToken": "xxxxx"
+}
+
+Example URI
+POST /v1/auth/token
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "grantType": "api_key",
+  "apiKey": "xxxxx",
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "accessToken": "xxxxx",
+  "refreshToken": "xxxxx",
+  "expiresIn": 3600
+}
+
+共通 ¶
+レスポンス形式 ¶
+
+各エンドポイントのレスポンスは共通のプロパティを持っています。
+
+code サーバの処理結果コードです。成功した場合、200が返ります。
+
+message サーバの処理でなにか問題が発生した場合など、その詳細が含まれます。
+
+timestamp レスポンスを返した時間。
+
+requestId リクエスト毎に割り振られる一意な値。
+
+result サーバでの処理結果。エンドポイントごとにプロパティが異なります。
+
+以降、レスポンスの説明では、result以外のプロパティについては省略いたします。
+
+{
+    "code": "200",
+    "message": [
+        {
+          "message": "Success"
+        }
+    ],
+    "timestamp": "2020-04-02T12:00+09:00",
+    "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+    "result": {
+    }
+}
+
+エラーコード ¶
+
+400 BAD_REQUEST
+
+URLパラメータまたは、リクエストボディに含まれる値に問題があります。
+
+設定値を再度確認してください。
+
+401 UNAUTHORIZED
+
+アクセストークンが無効です。アクセストークンの有効期限が切れていないか、正しくアクセストークンが設定されているか見直してください。
+
+403 FORBIDDEN
+
+権限が不足しています。APIキーに設定されている、権限を見直してください。
+
+404 NOT_FOUND
+
+存在しないエンドポイントです。URLを見直してください。
+
+500 INTERNAL_SERVER_ERROR
+
+システムに問題が発生しています。時間を置いて再度リクエストしてください。解消しない場合には、サポートまでお問い合わせください。
+
+504 GATEWAY_TIMEOUT
+
+所定の時間以内に処理が完了しませんでした。リクエスト内容を見直すか、時間を置いて再度リクエストしてください。解消しない場合には、サポートまでお問い合わせください。
+
+マスタ ¶
+コードマスタ ¶
+
+CAREER PLUSでは性別（男性:1、女性:2）や都道府県（北海道:1、東京:8）など、表示されている値ではなく、コード値と呼ばれる別の値に置き換えて保持しています。
+コード値で表されるものの一覧、および、そのコード値が指す意味を確認するには、以下のエンドポイントを使用します。
+
+コードマスタ一覧取得  ¶
+コードマスタ一覧取得
+GET/v1/ext2/master/list
+権限マスター(読み取り)
+
+Example URI
+GET /v1/ext2/master/list
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "codeMaster": [
+      {
+        "name": "MSTSEX",
+        "label": "性別マスタ"
+      },
+      {
+        "name": "MSTPREF",
+        "label": "都道府県マスタ"
+      }
+    ]
+  }
+}
+
+コードマスタ詳細取得  ¶
+コードマスタ詳細取得
+GET/v1/ext2/master/{codeName}
+権限マスター(読み取り)
+
+Example URI
+GET /v1/ext2/master/MSTSEX
+URI ParametersHideShow
+
+codeName
+string (required) Example: MSTSEXコードマスタ名
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "codeName": "MSTSEX",
+    "codeLabel": "性別マスタ",
+    "values": [
+      {
+        "value": 1,
+        "label": "男性"
+      },
+      {
+        "values": 2,
+        "label": "女性"
+      },
+      {
+        "values": 3,
+        "label": "無回答"
+      }
+    ]
+  }
+}
+
+リソース定義 ¶
+リソース定義について ¶
+
+CAREER PLUSでは、APIを通じてアクセスできる情報を「リソース」と呼びます。
+
+APIを通じてアクセス出来るリソースの種別は以下の通りです。
+
+career 求職者
+
+career_workexperience 求職者職歴
+
+career_action 求職者対応履歴
+
+client 企業
+
+client_action 企業対応履歴
+
+department 部署
+
+order 求人
+
+wrkcareer 求職者候補
+
+progress 進捗
+
+progress_history 進捗履歴
+
+file ファイル
+
+各リソースには、複数の項目を持っています。
+例えば、「求職者」リソースには、「姓」や「名」、「性別」などの項目が存在します。
+
+それぞれのリソースにどのような項目が存在するかは、リソース定義エンドポイントで確認出来ます。
+
+- 関連リソース ¶
+
+CAREER PLUSのリソースには、それぞれ関連性があるものが存在します。（例：企業と求人）
+
+「検索」のエンドポイントでは、関連するリソースを使用した検索が可能です。
+
+また、「取得」のエンドポイントでは、関連するリソースの項目も合わせて取得が可能です。
+
+どのリソースが関連リソースにあたるかは、各エンドポイントのリファレンスに記載しております。
+
+リソース定義  ¶
+リソース毎の定義情報を取得出来ます。
+取得出来る情報は以下の通りです。
+
+resourceCategory リソース種別
+
+items 項目リスト: 指定した種別のリソースに含まれる項目の一覧です。
+
+itemId 項目ID: 項目を一意に識別する値です。
+
+label 項目ラベル: 項目の日本語名です。
+
+itemType 項目タイプ: 項目のタイプです。タイプにより、バリデーションの方法等が異なります。
+
+isReadOnly 読み取り専用: trueの項目は、「追加」「更新」操作時に対象に含めることが出来ません。
+
+isNotUpdatable 更新不可: trueの項目は、「更新」操作時に対象に含めることが出来ません。
+
+isSortable ソート可否: 検索時のソートキーとして使用出来る項目はtrueとなります。
+
+validationRule 検証ルール
+
+required 必須: trueの項目は「追加」操作の場合、必ず対象に含める必要があります。「更新」操作の場合には、空の値で更新出来ません。
+
+regexString 文字列チェックルール: 値に設定出来る文字列のチェックルールです。正規表現で表されます。配列になっており、複数ある場合、全ての正規表現にマッチする必要があります。
+
+minLength 最短文字列長: 文字列の最短文字数です。
+
+maxLength 最長文字列長: 文字列の最長文字数です。
+
+minValue 最小値: 最小値です。項目に入力できる値が数値のみの場合に設定されます。
+
+maxValue 最大値: 最大値です。項目に入力できる値が数値のみの場合に設定されます。
+
+onlyEmail Emailアドレスチェック（RFC準拠）: 入力出来る値がメールアドレスを想定している項目の場合、trueが設定されます。
+
+codeName マスターコード名: マスターを参照している項目に設定されます。参照しているマスタに存在する値のみ入力出来ます。
+
+項目タイプには以下のものが存在します。
+
+text: 文字列として扱います。
+
+number: 数値として扱います。
+
+textarea: 文字列として扱います。改行(\n)が含まれます。
+
+selectone: 参照しているマスタに存在する値を1つ保持します。
+
+search: 参照しているマスタに存在する値を1つ保持します。(selectonetと同じですが、マスタの値が多い場合searchになることがあります。)
+
+select: 参照しているマスタに存在する値を複数保持します。
+
+date: 年月日の情報を保持します
+
+datetime: 年月日、時分秒の情報を保持します。（CAREER PLUSの画面上は秒の情報が表示されない項目があります。）
+
+取得
+GET/v1/ext2/schema/{resourceCategory}
+権限リソース定義(読み取り)
+
+Example URI
+GET /v1/ext2/schema/career
+URI ParametersHideShow
+
+resourceCategory
+string (required) Example: careerリソースタイプ
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+    "code": "200",
+    "message": [
+        {
+            "message": "Success"
+        }
+    ],
+    "timestamp": "2020-04-02T12:00+09:00",
+    "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+    "result": {
+        "resourceCategory": "career",
+        "items": [
+            {
+                "itemId": "CAREER#CAREER_ID",
+                "label": "求職者：求職者ID",
+                "itemType": "text",
+                "isReadOnly": true,
+                "isNotUpdatable": true,
+                "isSortable": true,
+                "validationRule": {
+                    "required": true,
+                    "regexString": [ "[0-9]*" ],
+                    "decimalPlace": 0
+                    "minLength": 0,
+                    "maxLength": 9,
+                    "minValue": 0,
+                    "maxValue": 999999999,
+                    "onlyEmail": false,
+                }
+            },
+            {
+                "itemId": "CAREER#LASTNAME",
+                "label": "求職者：姓",
+                "itemType": "text",
+                "isReadOnly": false,
+                "isNotUpdatable": false,
+                "isSortable": true,
+                "validationRule": {
+                    "required": true,
+                    "regexString": [ "[^ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｧｨｩｪｫｬｭｮｯｰﾞﾟ]*"],
+                    "minLength": 0,
+                    "maxLength": 100,
+                    "minValue": null,
+                    "maxValue": null,
+                    "onlyEmail": false,
+                }
+            },
+            {
+                "itemId": "CAREER#SEX",
+                "label": "求職者：性別",
+                "itemType": "selectone",
+                "isReadOnly": false,
+                "isNotUpdatable": false,
+                "isSortable": true,
+                "validationRule": {
+                    "required": false,
+                    "codeName": "MSTSEX"
+                }
+            }
+        ]
+    }
+}
+
+リソースについて ¶
+各リソース毎に、検索、取得、登録、更新、削除のエンドポイントが存在します。
+ここでは、各エンドポイントへのリクエスト内容およびレスポンス内容について説明します。
+
+検索 ¶
+
+検索エンドポイントでは、JSON形式のクエリを組み立てることで、柔軟に検索条件を指定出来ます。
+（検索に時間が掛かりすぎる場合、タイムアウトすることがあります。）
+
+リクエスト
+
+limit 1回のリクエストで取得する検索結果の上限件数。未指定の場合20件。(最大100)
+
+offset 検索結果全体のうち、取得する結果の開始位置。未指定の場合0。
+
+sort 検索結果をソートして取得した場合に指定。未指定の場合、並び順は保証されません。
+
+(ソートキーに指定する項目の内部仕様により、文字列的にソートされる項目と、数値的にソートされる項目があります。)
+
+itemId ソートキーとなる項目ID。
+
+order 並び順の指定。asc(昇順)またはdesc(降順)を指定します。未指定の場合、asc(昇順)となります。
+
+condition 検索条件。詳細な指定方法はこの後の章で記載します。未指定の場合、リソースの全件が選択されます。
+
+compoundType items配列の要素をandAND条件とするかorOR条件とするかを指定します。
+
+items 条件配列
+
+itemId 検索条件とする項目ID。
+
+searchType 値との比較方法。
+
+value 比較する値。
+
+{
+  "limit": 20,
+  "offset": 20,
+  "sort": [
+    {
+      "itemId": "CAREER#LASTNAME",
+      "order": "desc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "CAREER#MEMO",
+        "searchType": "LIKE",
+        "value": "メモ"
+      }
+    ]
+  }
+}
+
+レスポンス
+
+検索エンドポイントのレスポンスは以下のような形式となります。
+
+result 処理結果
+
+limit リクエストで指定したlimitの値。
+
+offset リクエストで指定したoffsetの値。
+
+count 検索にヒットした全件数。
+
+ids 検索にヒットしたリソースのIDの配列。最大でlimitの件数まで取得される。
+
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success",
+      "description": null
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "limit": 100,
+    "offset": 101,
+    "count": 1,
+    "ids": [
+      "123_1"
+    ]
+  }
+}
+
+- 比較方法 ¶
+
+比較方法としてsearchTypeに指定出来る値には次の物があります。
+
+GT 大なり（＞）
+
+LT 小なり（＜）
+
+GE 以上（≧）
+
+LE 以下（≦）
+
+EQ 等しい
+
+NOT_EQ 等しくない
+
+LIKE 含む（部分一致）
+
+NOT_LIKE 含まない
+
+START_WITH 先頭一致
+
+END_WITH 後方一致
+
+ENTERED 入力済み（※valueには空文字（’’）を指定してください）
+
+NOT_ENTERED 未入力（※valueには空文字（’’）を指定してください）
+
+項目タイプにより使用出来る比較方法が異なります。
+
+使用できる項目タイプと比較方法の組み合わせは以下の通りとなります。
+
+GT
+LT
+GE
+LE
+EQ
+NOT_EQ
+
+text
+〇
+〇
+〇
+〇
+〇
+〇
+
+textarea
+
+〇
+〇
+
+number
+〇
+〇
+〇
+〇
+〇
+〇
+
+select
+
+〇
+〇
+
+selectone
+〇
+〇
+〇
+〇
+〇
+〇
+
+search
+〇
+〇
+〇
+〇
+〇
+〇
+
+date
+〇
+〇
+〇
+〇
+〇
+〇
+
+datetime
+〇
+〇
+〇
+〇
+〇
+〇
+
+LIKE
+NOT_LIKE
+START_WITH
+END_WITH
+ENTERED
+NOT_ENTERED
+
+text
+〇
+〇
+〇
+〇
+〇
+〇
+
+textarea
+〇
+〇
+〇
+〇
+〇
+〇
+
+number
+
+〇
+〇
+
+select
+
+〇
+〇
+
+selectone
+〇
+〇
+〇
+〇
+〇
+〇
+
+search
+〇
+〇
+〇
+〇
+〇
+〇
+
+date
+
+〇
+〇
+
+datetime
+
+〇
+〇
+
+注意事項
+
+valueにnullは指定出来ません。NOT_ENTEREDを使用して検索してください。
+
+例
+
+姓名が「山田太郎」の求職者を検索する場合は以下のようなクエリとなります。
+
+{
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "CAREER#LASTNAME",
+        "searchType": "EQ",
+        "value": "山田"
+      },
+      {
+        "itemId": "CAREER#FIRSTNAME",
+        "searchType": "EQ",
+        "value": "太郎"
+      }
+    ]
+  }
+}
+
+- ネスト ¶
+
+また、検索条件は入れ子にすることが出来ます。
+
+例
+
+以下のクエリは姓名が「山田太郎」または「山田次郎」の求職者がヒットします。
+
+{
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "CAREER#LASTNAME",
+        "searchType": "EQ",
+        "value": "山田"
+      },
+      {
+        "compoundType": "or",
+        "items": [
+          {
+            "itemId": "CAREER#FIRSTNAME",
+            "searchType": "EQ",
+            "value": "太郎"
+          },
+          {
+            "itemId": "CAREER#FIRSTNAME",
+            "searchType": "EQ",
+            "value": "次郎"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+取得 ¶
+
+IDを指定して、リソースに含まれる項目を取得出来ます。
+
+リクエスト
+
+リクエストボディに取得した項目IDを配列形式で指定します。
+
+itemIds 項目IDの配列。(必須)
+
+{
+  "itemIds": [
+    "CAREER#CAREER_ID",
+    "CAREER#LASTNAME",
+    "CAREER#FIRSTNAME"
+  ]
+}
+
+レスポンス
+
+取得エンドポイントのレスポンスは以下のような形式となります。
+
+result
+
+id 取得したリソースID
+
+resourceCategory リソース種別
+
+items 項目の配列
+
+itemId 項目ID
+
+value 値
+
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success",
+      "description": null
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123",
+    "resourceCategory": "career",
+    "items": [
+      {
+        "itemId": "CAREER#CAREER_ID",
+        "value": "123"
+      },
+      {
+        "itemId": "CAREER#LASTNAME",
+        "value": "山田"
+      },
+      {
+        "itemId": "CAREER#FIRSTNAME",
+        "value": "太郎"
+      }
+    ]
+  }
+}
+
+値の形式は項目のタイプによって異なります。
+
+textタイプ: そのまま表示されます。
+
+{
+  "itemId": "CAREER#CAREER_ID",
+  "value": "山田"
+}
+
+textareaタイプ: 改行は\nとして表示されます。
+
+{
+  "itemId": "CAREER#MEMO",
+  "value": "1行目\n2行目"
+}
+
+selectoneタイプ: そのまま表示されます。
+
+{
+  "itemId": "CAREER#SEX",
+  "value": "1"
+}
+
+searchタイプ: そのまま表示されます。
+
+{
+  "itemId": "CAREER#ZIP",
+  "value": "1001234"
+}
+
+selectタイプ: 配列形式として表示されます。
+
+{
+  "itemId": "CAREER#PREF",
+  "value": ["8","9","10"]
+}
+
+dateタイプ: 「yyyy/MM/dd」の形式で表示されます。(例：「2021/01/02」2021年1月2日)
+
+{
+  "itemId": "CAREER#BIRTH_DATE",
+  "value": "2021/01/02"
+}
+
+datetimeタイプ: 「yyyy/MM/dd HH:mm」の形式で表示されます。(例：「2021/01/02 23:59」2021年1月2日 午後11時59分)
+
+{
+  "itemId": "CAREER#UPDATE_DATE",
+  "value": "2021/01/02 23:59"
+}
+
+登録 ¶
+
+項目の配列を登録用のエンドポイントへリクエストすることで、新しいリソースを登録することが出来ます。
+
+リクエスト
+
+各リソースには必須項目が存在します。(リソース定義でrequiredがtrueのもの)
+
+必須の項目は全て配列に含める必要があります。
+
+また、読み取り専用の項目は含めることが出来ません。
+
+登録者ID、更新者IDは999となります。
+
+items 項目配列
+
+itemId 項目ID
+
+value 値
+
+{
+    "items": [
+      {
+        "itemId": "CAREER#LASTNAME",
+        "value": "山田"
+      },
+      {
+        "itemId": "CAREER#FIRSTNAME",
+        "value": "太郎"
+      }
+    ]
+}
+
+また、親となるリソースに紐づける必要があるリソースは親のIDをリクエストに含める必要があります。
+
+例）求職者職歴
+
+careerId 紐づける求職者ID
+
+items 項目配列
+
+itemId 項目ID
+
+value 値
+
+{
+    "careerId": "123",
+    "items": [
+        {
+            "itemId": "CAREER_WORKEXP#COMPNAME",
+            "value": "テスト株式会社"
+        },
+        {
+            "itemId": "CAREER_WORKEXP#ANNUALINCM",
+            "value": "555"
+        }
+    ]
+}
+
+レスポンス
+
+result
+
+id 新規に採番されたID
+
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success",
+      "description": null
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+更新 ¶
+
+項目の配列を更新用のエンドポイントへリクエストすることで、リソースを更新することが出来ます。
+
+リクエスト
+
+各リソースには必須項目が存在します。必須項目は空の値で更新することは出来ません。
+
+また、読み取り専用、更新不可の項目は含めることが出来ません。
+
+更新者IDは999となります。
+
+読み取り専用の項目は含めることが出来ません。
+
+items 項目配列
+
+itemId 項目ID
+
+value 値
+
+{
+    "items": [
+      {
+        "itemId": "CAREER#LASTNAME",
+        "value": "山田"
+      },
+      {
+        "itemId": "CAREER#FIRSTNAME",
+        "value": "太郎"
+      }
+    ]
+}
+
+レスポンス
+
+result
+
+id 更新されたリソースID
+
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success",
+      "description": null
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+削除 ¶
+
+削除用のエンドポイントへリクエストを送信することでリソースを削除することが出来ます。
+ただし、削除には依存するリソースが存在しない事が前提となります。
+依存するリソースが存在する場合には、削除に失敗します。
+
+リクエスト
+
+削除リクエストには、リクエストボディは不要です。
+
+レスポンス
+
+result
+
+id 削除されたリソースID
+
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success",
+      "description": null
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+リソース（求職者） ¶
+求職者  ¶
+検索
+POST/v1/ext2/career/search
+権限：求職者(読み取り)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/career/search
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "limit": 100,
+  "offset": 0,
+  "sort": [
+    {
+      "itemId": "CAREER#LASTNAME",
+      "order": "desc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "CAREER#MEMO",
+        "searchType": "LIKE",
+        "value": "メモ"
+      }
+    ]
+  }
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "limit": 100,
+    "offset": 0,
+    "count": 1,
+    "ids": [
+      "123"
+    ]
+  }
+}
+
+取得
+POST/v1/ext2/career/select/{id}
+権限：求職者(読み取り)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/career/select/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123求職者ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "itemIds": [
+    "CAREER#CAREER_ID",
+    "CAREER#LASTNAME",
+    "CAREER#FIRSTNAME"
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123",
+    "resourceCategory": "career",
+    "items": [
+      {
+        "itemId": "CAREER#CAREER_ID",
+        "value": "123"
+      },
+      {
+        "itemId": "CAREER#LASTNAME",
+        "value": "山田"
+      },
+      {
+        "itemId": "CAREER#FIRSTNAME",
+        "value": "太郎"
+      }
+    ]
+  }
+}
+
+登録
+POST/v1/ext2/career/
+権限：求職者(登録)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/career/
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "items": [
+    {
+      "itemId": "CAREER#LASTNAME",
+      "value": "山田"
+    },
+    {
+      "itemId": "CAREER#FIRSTNAME",
+      "value": "太郎"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+更新
+PUT/v1/ext2/career/{id}
+権限：求職者(更新)
+
+関連リソース：なし
+
+Example URI
+PUT /v1/ext2/career/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123求職者ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "items": [
+    {
+      "itemId": "CAREER#LASTNAME",
+      "value": "山田"
+    },
+    {
+      "itemId": "CAREER#FIRSTNAME",
+      "value": "太郎"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+削除
+DELETE/v1/ext2/career/{id}
+権限：求職者(削除)
+
+関連リソース：なし
+
+Example URI
+DELETE /v1/ext2/career/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123求職者ID
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+求職者職歴  ¶
+検索
+POST/v1/ext2/career_workexperience/search
+権限：求職者(読み取り)、求職者職歴(読み取り)
+
+関連リソース：求職者
+
+Example URI
+POST /v1/ext2/career_workexperience/search
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "limit": 20,
+  "offset": 0,
+  "sort": [
+    {
+      "itemId": "CAREER_WORKEXP#BUSICR",
+      "order": "asc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "CAREER_WORKEXP#CAREER_ID",
+        "searchType": "EQ",
+        "value": "123"
+      }
+    ]
+  }
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "limit": 100,
+    "offset": 0,
+    "count": 3,
+    "ids": [
+      "123_1",
+      "123_2",
+      "123_3"
+    ]
+  }
+}
+
+取得
+POST/v1/ext2/career_workexperience/select/{id}
+権限：求職者(読み取り)、求職者職歴(読み取り)
+
+関連リソース：求職者
+
+Example URI
+POST /v1/ext2/career_workexperience/select/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1求職者職歴ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "itemIds": [
+    "CAREER#CAREER_ID",
+    "CAREER_WORKEXP#BUSICR"
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1",
+    "resourceCategory": "career_workexperience",
+    "items": [
+      {
+        "itemId": "CAREER#CAREER_ID",
+        "value": "123"
+      },
+      {
+        "itemId": "CAREER_WORKEXP#BUSICR",
+        "value": "1"
+      }
+    ]
+  }
+}
+
+登録
+POST/v1/ext2/career_workexperience/
+権限：求職者職歴(登録)
+
+関連リソース：なし
+
+careerId 求職者ID
+
+※登録時に紐づける求職者をcareerIdで指定します。
+
+Example URI
+POST /v1/ext2/career_workexperience/
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "careerId": "123",
+  "items": [
+    {
+      "itemId": "CAREER_WORKEXP#COMPNAME",
+      "value": "テスト株式会社"
+    },
+    {
+      "itemId": "CAREER_WORKEXP#ANNUALINCM",
+      "value": "555"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_4"
+  }
+}
+
+更新
+PUT/v1/ext2/career_workexperience/{id}
+権限：求職者職歴(更新)
+
+関連リソース：なし
+
+Example URI
+PUT /v1/ext2/career_workexperience/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1求職者職歴ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "items": [
+    {
+      "itemId": "CAREER_WORKEXP#ANNUALINCM",
+      "value": "600"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1"
+  }
+}
+
+削除
+DELETE/v1/ext2/career_workexperience/{id}
+権限：求職者職歴(削除)
+
+関連リソース：なし
+
+Example URI
+DELETE /v1/ext2/career_workexperience/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1求職者職歴ID
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1"
+  }
+}
+
+求職者対応履歴  ¶
+検索
+POST/v1/ext2/career_action/search
+権限：求職者(読み取り)、求職者対応履歴(読み取り)
+
+関連リソース：求職者
+
+Example URI
+POST /v1/ext2/career_action/search
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "limit": 20,
+  "offset": 0,
+  "sort": [
+    {
+      "itemId": "CAREER_ACTION#HISTSEQ",
+      "order": "asc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "CAREER_ACTION#CAREER_ID",
+        "searchType": "EQ",
+        "value": "123"
+      }
+    ]
+  }
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+"code": "200",
+"message": [
+    {
+        "message": "Success"
+    }
+],
+"timestamp": "2020-04-02T12:00+09:00",
+"requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+"result": {
+    "limit": 100,
+    "offset": 101,
+    "count": 1,
+    "ids": [
+      "123_1"
+      "123_2"
+      "123_3"
+    ]
+}
+}
+
+取得
+POST/v1/ext2/career_action/select/{id}
+権限：求職者(読み取り)、求職者対応履歴(読み取り)
+
+関連リソース：求職者
+
+Example URI
+POST /v1/ext2/career_action/select/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1求職者対応履歴ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "itemIds": [
+    "CAREER_ACTION#CAREER_ID",
+    "CAREER_ACTION#HISTSEQ"
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1",
+    "resourceCategory": "career_action",
+    "items": [
+      {
+        "itemId": "CAREER_ACTION#CAREER_ID",
+        "value": "123"
+      },
+      {
+        "itemId": "CAREER_ACTION#HISTSEQ",
+        "value": "1"
+      }
+    ]
+  }
+}
+
+登録
+POST/v1/ext2/career_action/
+権限：求職者対応履歴(登録)
+
+関連リソース：なし
+
+careerId 求職者ID
+
+※登録時に紐づける求職者をcareerIdで指定します。
+
+Example URI
+POST /v1/ext2/career_action/
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "careerId": "123",
+  "items": [
+    {
+      "itemId": "CAREER_ACTION#ACTION_ID",
+      "value": "1"
+    },
+    {
+      "itemId": "CAREER_ACTION#ACTION_DATE",
+      "value": "2021/01/23 15:30"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020",
+  "requestId": "xxxxx",
+  "result": {
+    "id": "123_4"
+  }
+}
+
+更新
+PUT/v1/ext2/career_action/{id}
+権限：求職者対応履歴(更新)
+
+関連リソース：なし
+
+Example URI
+PUT /v1/ext2/career_action/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1求職者対応履歴ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "items": [
+    {
+      "itemId": "CAREER_ACTION#ACTION_ID",
+      "value": "1"
+    },
+    {
+      "itemId": "CAREER_ACTION#ACTION_DATE",
+      "value": "2021/01/23 15:30:00"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1"
+  }
+}
+
+削除
+DELETE/v1/ext2/career_action/{id}
+権限：求職者対応履歴(削除)
+
+関連リソース：なし
+
+Example URI
+DELETE /v1/ext2/career_action/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1求職者対応履歴ID
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1"
+  }
+}
+
+リソース（企業） ¶
+企業  ¶
+検索
+POST/v1/ext2/client/search
+権限：企業(読み取り)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/client/search
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "limit": 100,
+  "offset": 0,
+  "sort": [
+    {
+      "itemId": "CLIENT#CLIENTNAME",
+      "order": "desc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "CLIENT#CLIENTNAME",
+        "searchType": "LIKE",
+        "value": "テスト"
+      }
+    ]
+  }
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "limit": 100,
+    "offset": 0,
+    "count": 1,
+    "ids": [
+      "123"
+    ]
+  }
+}
+
+取得
+POST/v1/ext2/client/select/{id}
+権限：企業(読み取り)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/client/select/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123企業ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "itemIds": [
+    "CLIENT#CLIENT_ID",
+    "CLIENT#CLIENTNAME"
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123",
+    "resourceCategory": "client",
+    "items": [
+      {
+        "itemId": "CLIENT#CLIENT_ID",
+        "value": "123"
+      },
+      {
+        "itemId": "CLIENT#CLIENTNAME",
+        "value": "テスト会社"
+      }
+    ]
+  }
+}
+
+登録
+POST/v1/ext2/client/
+権限：企業(登録)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/client/
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "items": [
+    {
+      "itemId": "CLIENT#CLIENTNAME",
+      "value": "テスト会社"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+更新
+PUT/v1/ext2/client/{id}
+権限：企業(更新)
+
+関連リソース：なし
+
+Example URI
+PUT /v1/ext2/client/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123企業ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "items": [
+    {
+      "itemId": "CLIENT#CLIENTNAME",
+      "value": "テスト会社"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+削除
+DELETE/v1/ext2/client/{id}
+権限：企業(削除)
+
+関連リソース：なし
+
+Example URI
+DELETE /v1/ext2/client/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123企業ID
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+企業対応履歴  ¶
+検索
+POST/v1/ext2/client_action/search
+権限：企業(読み取り)、企業対応履歴(読み取り)
+
+関連リソース：企業
+
+Example URI
+POST /v1/ext2/client_action/search
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "limit": 100,
+  "offset": 0,
+  "sort": [
+    {
+      "itemId": "CLIENT_ACTION#CLIENT_ID",
+      "order": "desc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "CLIENT_ACTION#ACTION_ID",
+        "searchType": "EQ",
+        "value": "1"
+      }
+    ]
+  }
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "limit": 100,
+    "offset": 0,
+    "count": 1,
+    "ids": [
+      "123_1"
+    ]
+  }
+}
+
+取得
+POST/v1/ext2/client_action/select/{id}
+権限：企業(読み取り)、企業対応履歴(読み取り)
+
+関連リソース：企業
+
+Example URI
+POST /v1/ext2/client_action/select/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1企業対応履歴ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "itemIds": [
+    "CLIENT_ACTION#CLIENT_ID",
+    "CLIENT_ACTION#COMPLETE_DATE"
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1",
+    "resourceCategory": "client_action",
+    "items": [
+      {
+        "itemId": "CLIENT_ACTION#CLIENT_ID",
+        "value": "123"
+      },
+      {
+        "itemId": "CLIENT_ACTION#COMPLETE_DATE",
+        "value": "2021/02/02"
+      }
+    ]
+  }
+}
+
+登録
+POST/v1/ext2/client_action/
+権限：企業対応履歴(登録)
+
+関連リソース：なし
+
+clientId 企業ID
+
+※登録時に紐づける企業をclientIdで指定します。
+
+Example URI
+POST /v1/ext2/client_action/
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "clientId": "123",
+  "items": [
+    {
+      "itemId": "CLIENT_ACTION#ACTION_ID",
+      "value": "1"
+    },
+    {
+      "itemId": "CLIENT_ACTION#ACTION_DATE",
+      "value": "2021/01/23 15:30"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_4"
+  }
+}
+
+更新
+PUT/v1/ext2/client_action/{id}
+権限：企業対応履歴(更新)
+
+関連リソース：なし
+
+Example URI
+PUT /v1/ext2/client_action/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1企業対応履歴ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "items": [
+    {
+      "itemId": "CLIENT_ACTION#ACTION_ID",
+      "value": "1"
+    },
+    {
+      "itemId": "CLIENT_ACTION#ACTION_DATE",
+      "value": "2021/01/23 15:30:00"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1"
+  }
+}
+
+削除
+DELETE/v1/ext2/client_action/{id}
+権限：企業対応履歴(削除)
+
+関連リソース：なし
+
+Example URI
+DELETE /v1/ext2/client_action/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1企業対応履歴ID
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1"
+  }
+}
+
+部署  ¶
+検索
+POST/v1/ext2/department/search
+権限：企業(読み取り)、部署(読み取り)
+
+関連リソース：企業
+
+Example URI
+POST /v1/ext2/department/search
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "limit": 100,
+  "offset": 0,
+  "sort": [
+    {
+      "itemId": "DEPARTMENT#CLIENT_ID",
+      "order": "desc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "DEPARTMENT#CHARGE_ID",
+        "searchType": "EQ",
+        "value": "1"
+      }
+    ]
+  }
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "limit": 100,
+    "offset": 0,
+    "count": 1,
+    "ids": [
+      "123_1"
+    ]
+  }
+}
+
+取得
+POST/v1/ext2/department/select/{id}
+権限：企業(読み取り)、部署(読み取り)
+
+関連リソース：企業
+
+Example URI
+POST /v1/ext2/department/select/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1部署ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "itemIds": [
+    "DEPARTMENT#CLIENT_ID",
+    "DEPARTMENT#CLT_DEPT"
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1",
+    "resourceCategory": "department",
+    "items": [
+      {
+        "itemId": "DEPARTMENT#CLIENT_ID",
+        "value": "123"
+      },
+      {
+        "itemId": "DEPARTMENT#CLT_DEPT",
+        "value": "テスト部署"
+      }
+    ]
+  }
+}
+
+登録
+POST/v1/ext2/department/
+権限：部署(登録)
+
+関連リソース：なし
+
+clientId 企業ID
+
+※1. 登録時に紐づける企業をclientIdで指定します。
+
+※2. 担当者情報（役職、名前、Tel、Fax、Email）を登録する場合、「CLT_CHARGE_SEQ」を指定することはできません。
+
+Example URI
+POST /v1/ext2/department/
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "clientId": "123",
+  "items": [
+    {
+      "itemId": "DEPARTMENT#CLT_DEPT",
+      "value": "テスト部署"
+    },
+    {
+      "itemId": "DEPARTMENT#CLT_NAME",
+      "value": "担当者 氏名"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_4"
+  }
+}
+
+更新
+PUT/v1/ext2/department/{id}
+権限：部署(更新)
+
+関連リソース：なし
+
+※1. 担当者情報は、5名まで登録可能です。
+
+※2. 担当者情報を新たに登録する場合は、「担当者・SEQ」を未設定にして担当者の「役職、名前、Tel、Fax、Email」の何れかを設定してください。
+
+※3. 「担当者・SEQ」のみ設定された担当者情報は削除対象となります。
+
+Example URI
+PUT /v1/ext2/department/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1部署ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "items": [
+    {
+      "itemId": "DEPARTMENT#CLT_DEPT",
+      "value": "テスト部署"
+    },
+    {
+      "itemId": "DEPARTMENT#CLT_NAME",
+      "value": "担当者 氏名"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1"
+  }
+}
+
+削除
+DELETE/v1/ext2/department/{id}
+権限：部署(削除)
+
+関連リソース：なし
+
+Example URI
+DELETE /v1/ext2/department/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1部署ID
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1"
+  }
+}
+
+リソース（求人） ¶
+求人  ¶
+検索
+POST/v1/ext2/order/search
+権限：企業(読み取り)、部署(読み取り)、求人(読み取り)
+
+関連リソース：企業、部署
+
+Example URI
+POST /v1/ext2/order/search
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "limit": 100,
+  "offset": 0,
+  "sort": [
+    {
+      "itemId": "ORDER#ORDER_ID",
+      "order": "desc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "ORDER#POSITIONNAME",
+        "searchType": "LIKE",
+        "value": "テスト"
+      }
+    ]
+  }
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "limit": 100,
+    "offset": 0,
+    "count": 1,
+    "ids": [
+      "123"
+    ]
+  }
+}
+
+取得
+POST/v1/ext2/order/select/{id}
+権限：企業(読み取り)、部署(読み取り)、求人(読み取り)
+
+関連リソース：企業、部署
+
+Example URI
+POST /v1/ext2/order/select/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123求人ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "itemIds": [
+    "ORDER#ORDER_ID",
+    "ORDER#POSITIONNAME"
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123",
+    "resourceCategory": "order",
+    "items": [
+      {
+        "itemId": "ORDER#ORDER_ID",
+        "value": "123"
+      },
+      {
+        "itemId": "ORDER#POSITIONNAME",
+        "value": "テストポジション"
+      }
+    ]
+  }
+}
+
+登録
+POST/v1/ext2/order/
+権限：求人(登録)
+
+関連リソース：なし
+
+departmentId 部署ID
+
+※登録時に紐づける部署をdepartmentIdで指定します。
+
+Example URI
+POST /v1/ext2/order/
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "departmentId": "123_1",
+  "items": [
+    {
+      "itemId": "ORDER#POSITIONNAME",
+      "value": "テストポジション"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+更新
+PUT/v1/ext2/order/{id}
+権限：求人(更新)
+
+関連リソース：なし
+
+Example URI
+PUT /v1/ext2/order/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123求人ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "items": [
+    {
+      "itemId": "ORDER#POSITIONNAME",
+      "value": "テストポジション"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+削除
+DELETE/v1/ext2/order/{id}
+権限：求人(削除)
+
+関連リソース：なし
+
+Example URI
+DELETE /v1/ext2/order/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123求人ID
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+リソース（求職者候補） ¶
+求職者候補  ¶
+検索
+POST/v1/ext2/wrkcareer/search
+権限：求職者候補(読み取り)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/wrkcareer/search
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "limit": 100,
+  "offset": 0,
+  "sort": [
+    {
+      "itemId": "WRKCAREER#LASTNAME",
+      "order": "desc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "WRKCAREER#MEMO",
+        "searchType": "LIKE",
+        "value": "メモ"
+      }
+    ]
+  }
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "limit": 100,
+    "offset": 0,
+    "count": 1,
+    "ids": [
+      "123"
+    ]
+  }
+}
+
+取得
+POST/v1/ext2/wrkcareer/select/{id}
+権限：求職者候補(読み取り)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/wrkcareer/select/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123求職者候補ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "itemIds": [
+    "WRKCAREER#WCR_ID",
+    "WRKCAREER#LASTNAME",
+    "WRKCAREER#FIRSTNAME"
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123",
+    "resourceCategory": "wrkcareer",
+    "items": [
+      {
+        "itemId": "WRKCAREER#WCR_ID",
+        "value": "123"
+      },
+      {
+        "itemId": "WRKCAREER#LASTNAME",
+        "value": "山田"
+      },
+      {
+        "itemId": "WRKCAREER#FIRSTNAME",
+        "value": "太郎"
+      }
+    ]
+  }
+}
+
+登録
+POST/v1/ext2/wrkcareer/
+権限：求職者候補(登録)
+
+関連リソース：なし
+
+※サンクスメールを送信する場合は、thanksMailFlgにtrueを指定します。
+
+※サンクスメールを送信する場合は、下記が必須となります。
+
+WRKCAREER#EMAILHOME or WRKCAREER#EMAILCELLULAR 自宅E-mail または 携帯E-mail。
+
+WRKCAREER#EMAILHOME_FLG or WRKCAREER#EMAILCELLULAR_FLG 自宅E-mail可否フラグ または 携帯E-mail可否フラグ。
+
+※レスポンスのthanksMailAddressは、リクエストのthanksMailFlgがtrueの場合のみ返却します。
+
+※サンクスメールを利用する際は、あらかじめCC/BCC/FROM/件名/本文を弊社宛にご連携ください。
+
+Example URI
+POST /v1/ext2/wrkcareer/
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "thanksMailFlg": true,
+  "items": [
+    {
+      "itemId": "WRKCAREER#LASTNAME",
+      "value": "山田"
+    },
+    {
+      "itemId": "WRKCAREER#FIRSTNAME",
+      "value": "太郎"
+    },
+    {
+      "itemId": "WRKCAREER#EMAILHOME",
+      "value": "xxxxxxxx@xxxxxxxxx.net"
+    },
+    {
+      "itemId": "WRKCAREER#EMAILHOME_FLG",
+      "value": "1"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123",
+    "thanksMailAddress": "xxxxxxxx@xxxxxxxxx.net"
+  }
+}
+
+更新
+PUT/v1/ext2/wrkcareer/{id}
+権限：求職者候補(更新)
+
+関連リソース：なし
+
+Example URI
+PUT /v1/ext2/wrkcareer/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123求職者候補ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "items": [
+    {
+      "itemId": "WRKCAREER#LASTNAME",
+      "value": "山田"
+    },
+    {
+      "itemId": "WRKCAREER#FIRSTNAME",
+      "value": "太郎"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+削除
+DELETE/v1/ext2/wrkcareer/{id}
+権限：求職者候補(削除)
+
+関連リソース：なし
+
+Example URI
+DELETE /v1/ext2/wrkcareer/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123求職者候補ID
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+リソース（進捗） ¶
+進捗  ¶
+検索
+POST/v1/ext2/progress/search
+権限：進捗(読み取り)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/progress/search
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "limit": 100,
+  "offset": 0,
+  "sort": [
+    {
+      "itemId": "PROGRESS#PROGRESS_ID",
+      "order": "desc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "PROGRESS#CAREER_ID",
+        "searchType": "EQ",
+        "value": "123"
+      }
+    ]
+  }
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "limit": 100,
+    "offset": 0,
+    "count": 1,
+    "ids": [
+      "1001"
+    ]
+  }
+}
+
+取得
+POST/v1/ext2/progress/select/{id}
+Example URI
+POST /v1/ext2/progress/select/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123進捗ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "itemIds": [
+    "PROGRESS#CAREER_ID",
+    "PROGRESS#ORDER_ID",
+    "PROGRESS#STATSU_ID"
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123",
+    "resourceCategory": "progress",
+    "items": [
+      {
+        "itemId": "PROGRESS#CAREER_ID",
+        "value": "1"
+      },
+      {
+        "itemId": "PROGRESS#ORDER_ID",
+        "value": "1"
+      },
+      {
+        "itemId": "PROGRESS#STATSU_ID",
+        "value": "12"
+      }
+    ]
+  }
+}
+
+登録
+POST/v1/ext2/progress/
+※求職者ID、求人IDを使用した作成のみ。
+
+careerId 求職者ID。必須。
+
+orderId 求人ID。必須。
+
+progressDate 進捗日。必須。
+
+items その他の項目
+
+Example URI
+POST /v1/ext2/progress/
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "careerId": "234",
+  "orderId": "234",
+  "progressDate": "2021/12/31",
+  "items": [
+    {
+      "itemId": "PROGRESS#MEMO",
+      "value": "備考さんぷる"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+更新
+PUT/v1/ext2/progress/{id}
+※ステータスの変更などは進捗履歴API経由で実施する。このAPIで更新出来るのは、応募理由 / 辞退 ・ 不合格理由 / 備考などの進捗自身に持っている情報のみ
+
+Example URI
+PUT /v1/ext2/progress/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123進捗ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "items": [
+    {
+      "itemId": "PROGRESS#MEMO",
+      "value": "備考さんぷる"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+削除
+DELETE/v1/ext2/progress/{id}
+進捗の情報を削除する。合わせて進捗履歴情報も削除されます。
+
+Example URI
+DELETE /v1/ext2/progress/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123進捗ID
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+進捗履歴  ¶
+検索
+POST/v1/ext2/progress_history/search
+権限：進捗(読み取り)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/progress_history/search
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "limit": 100,
+  "offset": 0,
+  "sort": [
+    {
+      "itemId": "PROGRESS_HISTORY#PROGRESS_ID_SUB",
+      "order": "desc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "PROGRESS_HISTORY#PROGRESS_ID",
+        "searchType": "EQ",
+        "value": "123"
+      }
+    ]
+  }
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+"code": "200",
+"message": [
+    {
+        "message": "Success"
+    }
+],
+"timestamp": "2020-04-02T12:00+09:00",
+"requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+"result": {
+    "limit": 100,
+    "offset": 0,
+    "count": 3,
+    "ids": [
+      "123_1",
+      "123_2",
+      "123_3",
+    ]
+}
+}
+
+取得
+POST/v1/ext2/progress_history/select/{id}
+権限：進捗(読み取り)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/progress_history/select/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1進捗履歴ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "itemIds": [
+    "PROGRESS_HISTORY#PROGRESS_ID",
+    "PROGRESS_HISTORY#PROGRESS_STATUS_ID",
+    "PROGRESS_HISTORY#PROGRESS_DATE"
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123",
+    "resourceCategory": "progress_history",
+    "items": [
+      {
+        "itemId": "PROGRESS_HISTORY#PROGRESS_ID",
+        "value": "1"
+      },
+      {
+        "itemId": "PROGRESS_HISTORY#STATUS",
+        "value": "1"
+      },
+      {
+        "itemId": "PROGRESS_HISTORY#PROGRESS_DATE",
+        "value": "2021/02/16"
+      }
+    ]
+  }
+}
+
+登録
+POST/v1/ext2/progress_history/
+権限：進捗(登録)
+
+関連リソース：なし
+
+progressId 紐づける進捗のID。必須。
+
+force 強制登録フラグ
+
+items その他の項目
+
+※１：進捗ステータス設定で決められた遷移先ステータス以外は登録時にエラーとなります。もし、強制的に登録したい場合には、forceプロパティをtrueにして下さい。
+
+Example URI
+POST /v1/ext2/progress_history/
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "progressId": "123",
+  "force": false,
+  "items": [
+    {
+      "itemId": "PROGRESS_HISTORY#PROGRESS_DATE",
+      "value": "2021/02/16"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1"
+  }
+}
+
+更新
+PUT/v1/ext2/progress_history/{id}
+権限：進捗(更新)
+
+関連リソース：なし
+
+Example URI
+PUT /v1/ext2/progress_history/123_1
+URI ParametersHideShow
+
+id
+string (required) Example: 123_1進捗履歴ID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "progressId": "123",
+  "items": [
+    {
+      "itemId": "PROGRESS_HISTORY#PROGRESS_DATE",
+      "value": "2021/02/16"
+    }
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_1"
+  }
+}
+
+削除
+DELETE/v1/ext2/progress_history/{id}
+権限：進捗(削除)
+
+関連リソース：なし
+
+Example URI
+DELETE /v1/ext2/progress_history/123_3
+URI ParametersHideShow
+
+id
+string (required) Example: 123_3進捗履歴ID
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123_3"
+  }
+}
+
+リソース（ファイル） ¶
+ファイル  ¶
+求職者または、企業に紐づくデータファイルを操作することが出来ます。
+CAREER PLUSの画面上からはコメントの更新が可能ですが、APIでは更新機能は提供しません。
+ファイルの情報はバイト列をBase64エンコードし、文字列としてやり取りします。
+
+検索
+POST/v1/ext2/file/search
+権限：ファイル(読み取り)
+
+関連リソース：なし
+
+Example URI
+POST /v1/ext2/file/search
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "limit": 100,
+  "offset": 0,
+  "sort": [
+    {
+      "itemId": "FILE#FILE_ID",
+      "order": "desc"
+    }
+  ],
+  "condition": {
+    "compoundType": "and",
+    "items": [
+      {
+        "itemId": "FILE#CAREER_ID",
+        "searchType": "EQ",
+        "value": "123"
+      }
+    ]
+  }
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "limit": 100,
+    "offset": 0,
+    "count": 3,
+    "ids": [
+      "1",
+      "2",
+      "3"
+    ]
+  }
+}
+
+取得
+POST/v1/ext2/file/select/{id}
+権限：ファイル(読み取り)
+
+関連リソース：なし
+
+他のリソースの取得と変わりませんがattachプロパティが追加になっています。
+
+ファイルの実体を取得する場合はこのプロパティをtrueにする必要があります。
+
+Example URI
+POST /v1/ext2/file/select/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123ファイルID
+
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "attach": true,
+  "itemIds": [
+    "FILE#FILE_ID",
+    "FILE#FILENAME"
+  ]
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123",
+    "resourceCategory": "file",
+    "items": [
+      {
+        "itemId": "FILE#FILE_ID",
+        "value": "123"
+      },
+      {
+        "itemId": "FILE#FILENAME",
+        "value": "サンプル.txt"
+      }
+    ],
+    "attach": "dGVzdAo="
+  }
+}
+
+登録
+POST/v1/ext2/file/
+権限：ファイル(登録)
+
+関連リソース：なし
+
+ファイルの登録は他のリソースと異なり、プロパティが以下の通りとなります。
+
+careerId 紐づける求職者ID。clientIdとどちらか一方必須。
+
+clientId 紐づける企業ID。careerIdとどちらか一方必須。
+
+attach ファイルの実体。必須。ファイルのバイト列をBase64エンコードした文字列。
+
+Example URI
+POST /v1/ext2/file/
+RequestHideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "careerId": "123",
+  "clientId": "456",
+  "items": [
+    {
+      "itemId": "FILE#FILE_ID",
+      "value": "123"
+    },
+    {
+      "itemId": "FILE#FILENAME",
+      "value": "サンプル.txt"
+    }
+  ],
+  "attach": "dGVzdAo="
+}
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "4"
+  }
+}
+
+削除
+DELETE/v1/ext2/file/{id}
+権限：ファイル(削除)
+
+関連リソース：なし
+
+Example URI
+DELETE /v1/ext2/file/123
+URI ParametersHideShow
+
+id
+string (required) Example: 123ファイルID
+
+Response  200HideShow
+
+Headers
+Content-Type: application/json
+
+Body
+{
+  "code": "200",
+  "message": [
+    {
+      "message": "Success"
+    }
+  ],
+  "timestamp": "2020-04-02T12:00+09:00",
+  "requestId": "xxxxx-xxxxx-xxxxx-xxxxx",
+  "result": {
+    "id": "123"
+  }
+}
+
+Generated by aglio on 19 Aug 2025

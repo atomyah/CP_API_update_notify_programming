@@ -1,0 +1,22 @@
+対象リソース	求職者職歴
+RESOURCE_CATEGORY	career_workexperience
+関連リソース	求職者
+項目ID	項目ラベル	項目タイプ	最大サイズ	必須	読み取り専用	更新	並び替え	参照マスタ
+CAREER_WORKEXP#ANNUALINCM	年収	number	12	-	-	○	○	-
+CAREER_WORKEXP#BUSICONTENTS	事業内容	textarea	200	-	-	○	○	-
+CAREER_WORKEXP#BUSICR_ID	職歴番号	number	-	-	●	○	○	-
+CAREER_WORKEXP#CAPITAL	資本金	number	13	-	-	○	○	-
+CAREER_WORKEXP#CAREER_ID	求職者ID	number	-	-	●	○	○	-
+CAREER_WORKEXP#COMPNAME	企業名	text	50	-	-	○	○	-
+CAREER_WORKEXP#DEPT	部署名	text	50	-	-	○	○	-
+CAREER_WORKEXP#EMPLOYEE_NUM	従業員数	number	6	-	-	○	○	-
+CAREER_WORKEXP#EMPTYPE_ID	雇用形態	selectone	-	-	-	○	○	MSTEMPTYPE
+CAREER_WORKEXP#FRIGNCPTL_FLG	外資フラグ	selectone	-	-	-	○	○	MSTCHOICE
+CAREER_WORKEXP#INDSCTG_ID	業種	selectone	-	-	-	○	○	MSTINDSCTG
+CAREER_WORKEXP#LISTED_ID	上場・外資区分	selectone	-	-	-	○	○	MSTLISTED
+CAREER_WORKEXP#MEMO	備考	textarea	200	-	-	○	○	-
+CAREER_WORKEXP#POST	役職	text	25	-	-	○	○	-
+CAREER_WORKEXP#QUITRSN	退職理由	textarea	500	-	-	○	○	-
+CAREER_WORKEXP#WKCONTENTS	職務内容	textarea	4000	-	-	○	×	-
+CAREER_WORKEXP#WKPERIODE_DATE	期間(終了)	date	-	-	-	○	○	-
+CAREER_WORKEXP#WKPERIODS_DATE	期間(開始)	date	-	-	-	○	○	-

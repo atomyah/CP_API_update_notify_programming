@@ -1,0 +1,18 @@
+# 秘密情報。絶対にコミットしない
+.env
+.env.*
+!.env.example
+
+# 状態・ログ
+var/
+*.sqlite3
+*.db
+
+# 検証スクリプトの出力（個人情報を含む）
+tools/verify/out/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/

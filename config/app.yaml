@@ -1,0 +1,49 @@
+# CP進捗通知 — 基本設定
+# 秘密情報はここに書かない。環境変数（.env）から読む。
+
+cp_api:
+  base_url: "https://api.careerplus.jp"
+  api_key_env: "CP_NOTIFY_API_KEY"      # 値そのものは書かない
+
+rate_limit:
+  # CP の上限は 240 req/分。超えると API サービスを停止される可能性がある。
+  # 既定は上限の 25%（60 req/分）。240 がキー単位かテナント単位かは未確認のため
+  # 余裕を大きく取る（docs/design/06-open-questions.md Q-1）。
+  tokens_per_second: 1.0                # = 60 req/分
+  bucket_capacity: 20                   # 瞬間的に 20 連続まで
+  warn_threshold_ratio: 0.8             # 80% を5分継続で超えたら警告
+
+store:
+  path: "var/state.sqlite3"
+  log_dir: "var/logs"
+
+limits:
+  max_notifications_per_cycle: 50       # 超えたらサマリ通知に切り替える
+  max_pages_per_cycle: 10               # 深い offset はタイムアウトのリスクがある
+  http_timeout_seconds: 60
+
+catchup:
+  # 断続起動（PoC は手元 PC）からの再開時の挙動。仕様書 9.5
+  catchup_max_window_days: 30
+  notify_gap_to_ops: true
+  gap_notify_threshold_minutes: 60      # これを超える停止があれば ops へ1通出す
+
+notifiers:
+  slack:
+    # Incoming Webhook はチャンネルごとに1本。URL はチャンネルを特定する秘密情報
+    webhooks:
+      career_status: { url_env: "SLACK_WEBHOOK_CAREER_STATUS" }   # 要件1
+      progress_flow: { url_env: "SLACK_WEBHOOK_PROGRESS_FLOW" }   # 要件2（未実装）
+      job_intro:     { url_env: "SLACK_WEBHOOK_JOB_INTRO" }       # 要件3（未実装）
+      ops:           { url_env: "SLACK_WEBHOOK_OPS" }             # 運用アラート・ドライラン
+
+  # 要件4のメール送信はペンディング（仕様書 8.4）。
+  # 再開時にここへ transport / host / port を書く。
+  # mail:
+  #   transport: "smtp"
+  #   host: "localhost"                 # PoC は Mailpit
+  #   port: 1025
+  #   starttls: false
+  #   auth: "none"
+  #   from_address: "cp-notify@mybrainlab.net"
+  #   admin_address: "a.yahara@mybrainlab.net"

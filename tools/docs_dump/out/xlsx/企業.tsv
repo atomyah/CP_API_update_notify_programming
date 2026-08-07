@@ -1,0 +1,85 @@
+対象リソース	企業
+RESOURCE_CATEGORY	client
+関連リソース	なし
+項目ID	項目ラベル	項目タイプ	最大サイズ	必須	読み取り専用	更新	並び替え	参照マスタ
+CLIENT#ACCIDENTINSRNC_FLG	労災保険	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#ADDR1	市区町村	text	100	-	-	○	○	-
+CLIENT#ADDR2	丁目番地号	text	70	-	-	○	○	-
+CLIENT#ADDR3	ビル名等	text	50	-	-	○	○	-
+CLIENT#ALLOWANCETEXT	諸手当	textarea	100	-	-	○	○	-
+CLIENT#ANNUALHOLIDAYS	年間休日	number	3	-	-	○	○	-
+CLIENT#APTITUDETEST_FLG	選考方法 適性試験	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#AREAALLOWANCE_FLG	地域手当	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#BUSICOMPANY	取引先	textarea	200	-	-	○	○	-
+CLIENT#BUSICONTENTS	事業内容	textarea	1000	-	-	○	×	-
+CLIENT#BUSICONTENTS_WEB	web用事業内容	textarea	1000	-	-	○	×	-
+CLIENT#CAPITAL	資本金	number	13	-	-	○	○	-
+CLIENT#CAPITAL_FLG	資本金非公開フラグ	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#CHARGE_ID	担当者	selectone	-	-	-	○	○	MSTUSER
+CLIENT#CHARGEAREA_ID	担当エリア	selectone	-	-	-	○	○	MSTAREA
+CLIENT#CHARGETEAM_ID	担当チーム	selectone	-	-	●	○	○	MSTTEAM
+CLIENT#CLIENT_EMAIL	企業E-mail	text	50	-	-	○	○	-
+CLIENT#CLIENT_ID	企業ID	number	-	-	●	○	○	-
+CLIENT#CLIENTNAME	企業名	text	80	●	-	○	○	-
+CLIENT#CLIENTNAMEKANA	企業名カナ	text	40	●	-	○	○	-
+CLIENT#CLIENTURL	企業URL	text	40	-	-	○	○	-
+CLIENT#CNGR_CNDLHOLIDAY_FLG	慶弔休暇	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#COMPCOMPANY	競合他社	textarea	200	-	-	○	○	-
+CLIENT#COMPFEATURE	会社特徴	textarea	1000	-	-	○	×	-
+CLIENT#COMPFEATURE_WEB	web用会社特徴	textarea	1000	-	-	○	×	-
+CLIENT#COMPHOUSE_DORM_FLG	寮・社宅	selectone	-	-	-	○	○	MST_CONTENT_CODE
+CLIENT#COMPSTYLE	社風・その他	textarea	600	-	-	○	○	-
+CLIENT#CORPFORMBACK	法人格(後)	text	10	-	-	○	○	MST_JURIDICAL_PERSONALITY
+CLIENT#CORPFORMFRONT	法人格(前)	text	10	-	-	○	○	MST_JURIDICAL_PERSONALITY
+CLIENT#EMPLOYEE_NUM	従業員数	number	6	-	-	○	○	-
+CLIENT#EMPLYCOMPETITION	スカウト	textarea	100	-	-	○	○	-
+CLIENT#ESSAY_FLG	選考方法 小論文	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#EXPLANATORY_FLG	選考方法 企業説明会	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#FAMILYALLOWANCE_FLG	家族手当	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#FLEXTIME_FLG	フレックスタイム	selectone	-	-	-	○	○	MST_CONTENT_CODE
+CLIENT#FOCUS_FLG	注力企業フラグ	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#FOUNDMON	設立月	number	2	-	-	○	○	-
+CLIENT#FOUNDYR	設立年	number	4	-	-	○	○	-
+CLIENT#FRIGNCPTL_FLG	外資	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#HEALTHINSURANCE_FLG	健康保険	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#HOLIDAYTEXT	休日休暇	textarea	100	-	-	○	○	-
+CLIENT#HOUSINGALLOWANCE_FLG	住宅手当	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#HP_CORPNAME	Web掲載用匿名会社名	text	100	-	-	○	○	-
+CLIENT#INDSCTG_ID	業種	selectone	4	●	-	○	○	MSTINDSCTG
+CLIENT#INSERT_DATE	入力日	datetime	-	-	●	○	○	-
+CLIENT#INSURANCETEXT	保険	textarea	100	-	-	○	○	-
+CLIENT#INTERVIEW_NUM	面接回数	number	2	-	-	○	○	-
+CLIENT#LISTED_ID	市場情報 上場	selectone	-	-	-	○	○	MSTLISTED
+CLIENT#MARKET_ID	市場情報 上場先	selectone	-	-	-	○	○	MSTMARKET
+CLIENT#MEMO	備考	textarea	2000	-	-	○	×	-
+CLIENT#NEWYEARHOLIDAY_FLG	年末年始休暇	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#OLDCLIENT_ID	過去ID	text	20	-	-	○	○	-
+CLIENT#ORDINARYPROFIT	経常利益	number	12	-	-	○	○	-
+CLIENT#OVRTMALLOWANCE_FLG	残業手当	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#PAIDHOLIDAY_FLG	有給休暇	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#PREF_ID	都道府県	selectone	-	-	-	○	○	MSTPREF
+CLIENT#QUALSKLCHK_FLG	選考方法 スキルチェック	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#RCMNDNOTES	推薦時注意点	textarea	100	-	-	○	○	-
+CLIENT#RECIEVEDETAILS_ID	受注経緯	selectone	-	-	-	○	○	MSTRECIEVE
+CLIENT#SALESALLOWANCE_FLG	営業手当	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#SALESAMOUNT	売上高	number	12	-	-	○	○	-
+CLIENT#SALESAMOUNT_FLG	売上高非公開フラグ	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#SALESSTATUS_ID	営業ステータス	selectone	-	-	-	○	○	MSTSALESSTATUS
+CLIENT#SEXRATIO	男女比率	number	3	-	-	○	○	-
+CLIENT#STOCKHOLDER	主な株主	textarea	200	-	-	○	○	-
+CLIENT#SUMMARHOLIDAY_FLG	夏季休暇	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#TRAVELALLOWANCE_FLG	通勤手当	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#TRIAL_FLG	試用期間 有無	selectone	-	-	-	○	○	MST_CONTENT_CODE
+CLIENT#TRIALPERIOD	試用期間	text	2	-	-	○	○	-
+CLIENT#UNEMPLYINSRNC_FLG	雇用保険	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#UPDATE_DATE	更新日	datetime	-	-	●	○	○	-
+CLIENT#UPDATEUSER_ID	更新者	selectone	-	-	-	○	○	MSTUSER
+CLIENT#VENTURE_FLG	ベンチャー	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#WELFAREPENSION_FLG	厚生年金	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#WKHOUREH	就業時間(時)(終了)	text	2	-	-	○	○	-
+CLIENT#WKHOUREM	就業時間(分)(終了)	text	2	-	-	○	○	-
+CLIENT#WKHOURSH	就業時間(時)(開始)	text	2	-	-	○	○	-
+CLIENT#WKHOURSM	就業時間(分)(開始)	text	2	-	-	○	○	-
+CLIENT#WORKPRESENTATION_FLG	選考方法 作品提出	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#WRITTENEXAM_FLG	選考方法 筆記試験	selectone	-	-	-	○	○	MSTCHOICE
+CLIENT#ZIP_ID	郵便番号	search	-	-	-	○	○	MSTZIPCODE

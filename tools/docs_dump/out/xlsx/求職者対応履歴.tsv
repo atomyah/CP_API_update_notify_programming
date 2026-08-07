@@ -1,0 +1,18 @@
+対象リソース	求職者対応履歴
+RESOURCE_CATEGORY	career_action
+関連リソース	求職者
+項目ID	項目ラベル	項目タイプ	最大サイズ	必須	読み取り専用	更新	並び替え	参照マスタ
+CAREER_ACTION#ACTION_DATE	対応日	date	-	-	-	○	○	-	※1 条件付き必須。「対応日」「アクションID」「担当」いずれかは必須
+CAREER_ACTION#ACTION_ID	アクションID	selectone	2	-	-	○	○	MSTACTION	※1 条件付き必須。「対応日」「アクションID」「担当」いずれかは必須
+CAREER_ACTION#ACTIONCHARGE_ID	担当	selectone	13	-	-	○	○	MSTUSER	※1 条件付き必須。「対応日」「アクションID」「担当」いずれかは必須
+CAREER_ACTION#ACTIONMEMO	内容	textarea	2000	-	-	○	×	-
+CAREER_ACTION#ACTIONTEAM_ID	担当チーム	selectone	-	-	●	○	○	MSTTEAM
+CAREER_ACTION#CAREER_ID	求職者ID	number	-	-	●	○	○	-
+CAREER_ACTION#COMPLETE_DATE	完了日	date	-	-	-	○	○	-
+CAREER_ACTION#HISTSEQ	対応番号	number	-	-	●	○	○	-
+CAREER_ACTION#NEXTACTION_DATE	次回コンタクト日	datetime	-	-	-	○	○	-
+CAREER_ACTION#ACTIONCHOICE_ID1	対応履歴選択肢1	selectone	-	-	-	○	○	MSTACTION_CHOICE1
+CAREER_ACTION#ACTIONCHOICE_ID2	対応履歴選択肢2	selectone	-	-	-	○	○	MSTACTION_CHOICE2
+CAREER_ACTION#ACTIONCHOICE_ID3	対応履歴選択肢3	selectone	-	-	-	○	○	MSTACTION_CHOICE3
+CAREER_ACTION#ACTIONTEXT1	対応履歴テキスト1	text	60	-	-	○	○	-
+CAREER_ACTION#ACTIONTEXT2	対応履歴テキスト2	text	60	-	-	○	○	-

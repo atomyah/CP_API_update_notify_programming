@@ -1,0 +1,70 @@
+# CP進捗通知 — 監視ルール
+#
+# 項目 ID はコードに直書きせず、ここに集約する（rules/10-cp-api.md）。
+# 起動時に GET /v1/ext2/schema/{resource} で実在を検証し、無ければ起動を失敗させる。
+# **項目一覧 xlsx ではなく実環境の schema が正。**
+
+watchers:
+
+  # --- 要件1: 求職者 -----------------------------------------------------
+  # > 求職者の「項目（デフォルト項目およびオリつく項目）」のステータスが
+  # > 変わったら Slack に通知する
+  #
+  # 対象: 全求職者。値は限定せず、変化したら通知する（業務側の決定 B-3）。
+  # 項目: schema の全項目（229件 = 232 − 除外3件）。オリつく項目 CAREER#48002 を含む。
+  #       ラベルと参照マスタは schema（validationRule.codeName）から自動で解決される。
+  career_status:
+    resource: "career"
+    enabled: true
+    interval_minutes: 15          # 最大遅延 15分 + 処理時間
+                                  # 動作確認時は 1 にして常駐させると1分以内に届く
+    priority: 2                   # 小さいほど優先
+    budget_per_cycle: 60          # 超えたら中断して次サイクルへ持ち越す
+    overlap_seconds: 60           # datetime は秒精度で検索できる（実測）
+    bootstrap_budget_per_cycle: 500
+
+    watched_items: "*"            # schema の全項目 − 除外
+
+    # 保存のたびに動く項目。含めると「更新された」だけで毎回通知が出る
+    exclude_suffixes:
+      - "#UPDATE_DATE"
+      - "#INSERT_DATE"
+    exclude_items:
+      - "CAREER#LAST_LOGIN"       # マイページのログインで動く。業務上の変化ではない
+
+    # 通知の見出しに使う項目
+    identity_items:
+      - "CAREER#CAREER_ID"
+      - "CAREER#LASTNAME"
+      - "CAREER#FIRSTNAME"
+    name_template: "{CAREER#LASTNAME} {CAREER#FIRSTNAME}"
+
+    # 監視対象を絞りたくなったら target.condition を足す。
+    # 例（惣流アスカだけを見る場合）:
+    # target:
+    #   condition:
+    #     compoundType: and
+    #     items:
+    #       - itemId: "CAREER#CAREER_ID"
+    #         searchType: "EQ"
+    #         value: "18"
+
+    # 遷移前後を通知するため生値を保存する。
+    # ⚠️ 個人情報が SQLite に平文で入る（rules/40-secrets-and-security.md）。
+    #    false にすると「変更あり」だけを通知し、前後の値は出さない
+    keep_raw_values: true
+    max_items_in_body: 20         # 1通に載せる項目数の上限。超えたら「ほか N 項目」
+
+    notify:
+      channel_key: "career_status"
+      template: "record_changed"
+      resource_label: "求職者"
+
+  # --- 実装しないもの ----------------------------------------------------
+  # 企業(client) / 求人(order) / 進捗(progress) / 進捗履歴(progress_history) /
+  # 部署(department) / ファイル(file) は**監視対象外**（業務側の決定 2026-08-07）。
+  # 技術的には同じ ResourceWatcher で監視できることを実環境で確認済みなので、
+  # 必要になればこのファイルにブロックを足すだけでよい（コード変更は不要）。
+  #
+  # 要件2/3（進捗フローの進行）は progress_history の**追加**を検知する別の仕組み。
+  # 要件4（対応履歴）はメール送信がペンディング（仕様書 8.4）。

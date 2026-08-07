@@ -1,0 +1,24 @@
+対象リソース	進捗詳細
+RESOURCE_CATEGORY	progress 
+関連リソース	なし
+項目ID	項目ラベル	項目タイプ	最大サイズ	必須	読み取り専用	更新	並び替え	参照マスタ
+PROGRESS_HISTORY#PROGRESS_ID	進捗ID	number	-	-	●	○	○	-
+PROGRESS_HISTORY#PROGRESS_ID_SUB	進捗ID_枝番	number	-	-	●	○	○	-
+PROGRESS_HISTORY#INSERT_DATE	入力日	datetime	-	-	●	○	○	-
+PROGRESS_HISTORY#UPDATE_DATE	更新日	datetime	-	-	●	○	○	-
+PROGRESS_HISTORY#UPDATEUSER_ID	更新者	selectone	-	-	●	○	○	MSTUSER
+PROGRESS_HISTORY#PROGRESS_DATE	進捗日	date	-	-	-	○	○	-
+PROGRESS_HISTORY#RELATED_DATE	関連日	datetime	-	-	-	○	○	-
+PROGRESS_HISTORY#PROGRESS_STATUS_ID	進捗ステータスID	selectone	-	-	-	×	○	MST_PROGRESS_STATUS
+PROGRESS_HISTORY#PROGRESS_COUNTER_ID	進捗カウンタID	number	-	-	●	○	○	-
+PROGRESS_HISTORY#COUNT_NUMBER	カウント数値	number	-	-	●	○	○	-
+PROGRESS_HISTORY#MEMO	備考	textarea	200	-	-	○	×	-
+PROGRESS_HISTORY#CAREER_CHARGETEAM_ID	求職者担当チーム	selectone	-	-	●	○	○	MSTTEAM
+PROGRESS_HISTORY#CAREER_CHARGE_ID	求職者担当者	selectone	-	-	-	○	○	MSTUSER
+PROGRESS_HISTORY#ORDER_CHARGETEAM_ID	求人担当チーム	selectone	-	-	●	○	○	MSTTEAM
+PROGRESS_HISTORY#ORDER_CHARGE_ID	求人担当者	selectone	-	-	-	○	○	MSTUSER
+PROGRESS_HISTORY#IS_LAST_COUNT	最終フラグ	selectone	-	-	-	○	○	MSTCHOICE
+PROGRESS_HISTORY#INTERVIEWGUIDEMAIL_FLG	面接案内送信済みフラグ	selectone	-	-	●	○	○	MSTCHOICE
+PROGRESS_HISTORY#ESTIMATED_SALES_AMOUNT	見込回収金額	number	12	-	-	○	○	-
+PROGRESS_HISTORY#ESTIMATED_SALES_ACCURACY	見込確度	selectone	-	-	-	○	○	MST_ESTIMATED_SALES_ACCURACY
+PROGRESS_HISTORY#ESTIMATED_SALES_MONTH	見込計上月	date	-	-	-	○	○	-

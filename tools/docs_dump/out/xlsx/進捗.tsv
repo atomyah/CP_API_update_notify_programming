@@ -1,0 +1,28 @@
+対象リソース	進捗
+RESOURCE_CATEGORY	progress 
+関連リソース	なし
+項目ID	項目ラベル	項目タイプ	最大サイズ	必須	読み取り専用	更新	並び替え	参照マスタ
+PROGRESS#PROGRESS_ID	進捗ID	number	-	-	●	○	○	-
+PROGRESS#CAREER_ID	求職者ID	number	9	●	-	×	○	-
+PROGRESS#CLIENT_ID	企業ID	number	-	-	●	○	○	-
+PROGRESS#CLIENT_ID_SUB	事業所ID	number	-	-	●	○	○	-
+PROGRESS#ORDER_ID	求人ID	number	9	●	-	×	○	-
+PROGRESS#INSERT_DATE	入力日	datetime	-	-	●	○	○	-
+PROGRESS#UPDATE_DATE	更新日	datetime	-	-	●	○	○	-
+PROGRESS#UPDATEUSR_ID	更新者	selectone	-	-	●	○	○	MSTUSER
+PROGRESS#STATUS_ID	進捗ステータス	selectone	-	-	●	○	○	MST_PROGRESS_STATUS
+PROGRESS#LASTPROGRESS_DATE	最終進捗更新日	date	-	-	-	×	○	-
+PROGRESS#REFUSAL_REASON	辞退理由	textarea	2000	-	-	○	×	-
+PROGRESS#MEMO	備考	textarea	10000	-	-	○	×	-
+PROGRESS#LASTPROGRESS_ID_SUB	最新の進捗サブ	number	-	-	●	○	○	-
+PROGRESS#IS_LAST_COUNT	最終フラグ	number	-	-	●	○	○	-
+PROGRESS#LEAVE_JOB_STATUS_ID	[就業/離職]状況	selectone	-	-	-	○	○	MST_CONTENT_CODE
+PROGRESS#SURVEY_DATE	[就業/離職]調査日時	date	-	-	-	○	○	-
+PROGRESS#SURVEY_METHOD_ID	[就業/離職]調査方法区分	selectone	-	-	-	○	○	MST_CONTENT_CODE
+PROGRESS#SURVEY_METHOD_OTHER	[就業/離職]調査方法	text	100	-	-	○	○	-
+PROGRESS#APPLICATION_REASON	応募理由	textarea	2000	-	-	○	×	-
+PROGRESS#ESTIMATED_SALES_AMOUNT	見込回収金額	number	-	-	●	○	○	-
+PROGRESS#ESTIMATED_SALES_ACCURACY	見込確度	selectone	-	-	●	○	○	MST_ESTIMATED_SALES_ACCURACY
+PROGRESS#ESTIMATED_SALES_MONTH	見込計上月	date	-	-	●	○	○	-
+PROGRESS#INTRODUCTION_DATE	紹介日	date	-	-	-	○	○	-
+PROGRESS#RECRUITMENT_DATE	採用日	date	-	-	-	○	○	-

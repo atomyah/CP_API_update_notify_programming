@@ -1,0 +1,16 @@
+対象リソース	ファイル
+RESOURCE_CATEGORY	file 
+関連リソース	なし
+項目ID	項目ラベル	項目タイプ	最大サイズ	必須	読み取り専用	更新	並び替え	参照マスタ
+FILE#CAREER_ID	求職者ID	number	-	-	●	○	○	-
+FILE#CLIENT_ID	企業ID	number	-	-	●	○	○	-
+FILE#CP_COMMENT	コメント	text	300	-	-	×	○	MSTUSER
+FILE#FILEEXTENSION	ファイル拡張子	text	-	-	●	○	○	-
+FILE#FILENAME	ファイル名	text	60	●	-	×	○	MSTUSER
+FILE#FILESIZE	ファイルサイズ	number	-	-	●	○	○	-
+FILE#FILETYPE_ID	ファイル種類	selectone	-	●	-	×	○	-
+FILE#FILE_ID	ファイルID	number	-	-	●	○	○	MSTFILETYPE
+FILE#INSERTUSER_ID	登録者	selectone	-	-	●	○	○	-
+FILE#INSERT_DATE	登録日	datetime	-	-	●	○	○	-
+FILE#UPDATEUSER_ID	更新者	selectone	-	-	●	○	○	-
+FILE#UPDATE_DATE	更新日	datetime	-	-	●	○	○	-
