@@ -59,6 +59,35 @@ class RateLimitConfig:
 
 
 @dataclass
+class NameSource:
+    """通知本文に出す名前を、どのリソースのどの項目から作るか（`core/resolver.py`）。
+
+    項目 ID をコードに直書きしないため、ここで受け取る（`rules/10-cp-api.md`）。
+
+    Attributes:
+        resource:     解決先の CP リソース（`career` / `order` / `client`）
+        items:        取得する項目 ID。**表示に使うものだけを列挙する**
+        template:     `{項目ID}` を差し込んで名前を組み立てる
+        ttl_seconds:  キャッシュの寿命
+        max_entries:  LRU の上限件数
+    """
+
+    resource: str
+    items: list[str]
+    template: str
+    ttl_seconds: int = 3600
+    max_entries: int = 1000
+
+    def render(self, values: dict[str, Any]) -> str:
+        text = self.template
+        for item_id in self.items:
+            value = values.get(item_id)
+            text = text.replace("{" + item_id + "}", "" if value is None else str(value))
+        # 姓だけ入っていて名が空のときに余分な空白が残らないように潰す
+        return " ".join(text.split())
+
+
+@dataclass
 class CatchupConfig:
     """断続起動（PoC）からの再開時の挙動（仕様書 9.5）。"""
 
@@ -76,6 +105,7 @@ class AppConfig:
     store_path: Path = ROOT / "var" / "state.sqlite3"
     log_dir: Path = ROOT / "var" / "logs"
     slack_webhook_envs: dict[str, str] = field(default_factory=dict)
+    name_resolution: dict[str, NameSource] = field(default_factory=dict)
     max_notifications_per_cycle: int = 50
     max_pages_per_cycle: int = 10
     http_timeout_seconds: float = 60.0
@@ -103,6 +133,8 @@ def load_app_config(path: Path) -> AppConfig:
             raise ConfigError(f"notifiers.slack.webhooks.{key}.url_env is required")
         webhooks[key] = env_name
 
+    names = _load_name_sources(data.get("name_resolution", {}) or {})
+
     cfg = AppConfig(
         base_url=cp.get("base_url", "https://api.careerplus.jp"),
         api_key_env=cp.get("api_key_env", "CP_NOTIFY_API_KEY"),
@@ -120,6 +152,7 @@ def load_app_config(path: Path) -> AppConfig:
         store_path=_resolve(store.get("path", "var/state.sqlite3")),
         log_dir=_resolve(store.get("log_dir", "var/logs")),
         slack_webhook_envs=webhooks,
+        name_resolution=names,
         max_notifications_per_cycle=int(limits.get("max_notifications_per_cycle", 50)),
         max_pages_per_cycle=int(limits.get("max_pages_per_cycle", 10)),
         http_timeout_seconds=float(limits.get("http_timeout_seconds", 60.0)),
@@ -133,6 +166,31 @@ def load_app_config(path: Path) -> AppConfig:
             f"exceeds the emergency ceiling of 120 req/min (CP limit is 240)"
         )
     return cfg
+
+
+def _load_name_sources(data: dict[str, Any]) -> dict[str, NameSource]:
+    """`name_resolution` セクションを読む（`core/resolver.py`）。
+
+    未設定でも起動できるようにする。名前が引けない場合は通知本文に
+    `(未設定)` が出るだけで、通知そのものは落とさない。
+    """
+    sources: dict[str, NameSource] = {}
+    for kind, entry in data.items():
+        entry = entry or {}
+        for key in ("resource", "items", "template"):
+            if not entry.get(key):
+                raise ConfigError(f"name_resolution.{kind}.{key} is required")
+        items = entry["items"]
+        if not isinstance(items, list):
+            raise ConfigError(f"name_resolution.{kind}.items must be a list")
+        sources[kind] = NameSource(
+            resource=entry["resource"],
+            items=[str(i) for i in items],
+            template=str(entry["template"]),
+            ttl_seconds=int(entry.get("ttl_seconds", 3600)),
+            max_entries=int(entry.get("max_entries", 1000)),
+        )
+    return sources
 
 
 def load_watchers_config(path: Path) -> dict[str, dict[str, Any]]:

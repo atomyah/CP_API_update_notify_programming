@@ -28,6 +28,33 @@ catchup:
   notify_gap_to_ops: true
   gap_notify_threshold_minutes: 60      # これを超える停止があれば ops へ1通出す
 
+# 通知本文に出す名前の解決（app/core/resolver.py・仕様書 5.3）。
+# progress / progress_history が持っているのは ID だけなので、別リソースを select して
+# 名前に直す。変化が遅いので TTL 付き LRU でキャッシュする。
+#
+# ⚠️ ここに担当者メールアドレス（CAREER#CHARGE_EMAIL）を足さないこと。
+#    要件4の宛先であり、担当者変更の直後に旧担当へ送るのは実害がある（仕様書 5.3）。
+name_resolution:
+  career:
+    resource: "career"
+    items: ["CAREER#LASTNAME", "CAREER#FIRSTNAME"]
+    template: "{CAREER#LASTNAME} {CAREER#FIRSTNAME}"
+    ttl_seconds: 3600                   # 1時間
+    max_entries: 2000
+  order:
+    resource: "order"
+    items: ["ORDER#POSITIONNAME"]
+    template: "{ORDER#POSITIONNAME}"
+    ttl_seconds: 21600                  # 6時間
+    max_entries: 1000
+  client:
+    # 進捗は PROGRESS#CLIENT_ID を直接持っているので、求人を経由せず 1 リクエストで引ける
+    resource: "client"
+    items: ["CLIENT#CLIENTNAME"]
+    template: "{CLIENT#CLIENTNAME}"
+    ttl_seconds: 21600                  # 6時間
+    max_entries: 1000
+
 notifiers:
   slack:
     # Incoming Webhook はチャンネルごとに1本。URL はチャンネルを特定する秘密情報

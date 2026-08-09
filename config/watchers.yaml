@@ -60,11 +60,48 @@ watchers:
       template: "record_changed"
       resource_label: "求職者"
 
+  # --- 要件2 + 要件3: 進捗フローの進行 ------------------------------------
+  # > 進捗フローが進行したら Slack に通知する（要件2）
+  # > 「求人紹介OK → 新規登録」を Slack に通知する（要件3）
+  #
+  # 要件3は要件2と**同一のデータソース**（進捗履歴の追加）。実測で
+  # 「進捗ステータス 社内確認中(16) → 応募意思確認中(求人)(11) の遷移」だと確定した。
+  # 別々に API を叩かず、全遷移の上に「特定の遷移だけ文面とチャンネルを変える」形で乗せる。
+  progress_flow:
+    type: "progress_flow"
+    enabled: true
+    interval_minutes: 5           # 最大遅延 5分 + 処理時間
+    priority: 1                   # 要件1（15分間隔）より優先する
+    budget_per_cycle: 60
+    overlap_seconds: 60           # datetime は秒精度で検索できる（実測）
+
+    # モードA。マスタの返却順は業務フロー順ではないことが実測で判明しているため、
+    # フロー定義を推測で埋めず、まず全遷移を流して実データを見てから絞る。
+    # false にするときは watched_statuses に通知したいステータスを列挙する
+    notify_all_transitions: true
+    watched_statuses: []
+
+    notify:
+      channel_key: "progress_flow"
+      template: "progress_transition"
+
+    # 要件3。先に書いたルールが勝つ。当たったものは一般チャンネルには出ない
+    special_transitions:
+      - name: "求人紹介OK"
+        to_status: "11"           # 応募意思確認中(求人)。実測で確定
+        from_status: "16"         # 社内確認中（省略可。指定すると誤検知が減る）
+        # ⚠️ その進捗を初めて観測したときは遷移前のステータスが分からない。
+        #    既定ではそれでも一致とみなす（取りこぼしより重複を選ぶ）。
+        #    true にすると遷移前が確認できたときだけ job_intro へ送る
+        from_status_required: false
+        notify:
+          channel_key: "job_intro"
+          template: "job_intro_ok"
+
   # --- 実装しないもの ----------------------------------------------------
   # 企業(client) / 求人(order) / 進捗(progress) / 進捗履歴(progress_history) /
   # 部署(department) / ファイル(file) は**監視対象外**（業務側の決定 2026-08-07）。
   # 技術的には同じ ResourceWatcher で監視できることを実環境で確認済みなので、
   # 必要になればこのファイルにブロックを足すだけでよい（コード変更は不要）。
   #
-  # 要件2/3（進捗フローの進行）は progress_history の**追加**を検知する別の仕組み。
   # 要件4（対応履歴）はメール送信がペンディング（仕様書 8.4）。

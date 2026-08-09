@@ -34,6 +34,7 @@ from app.core.events import Notification
 from app.core.logging import Logger
 from app.core.master import MasterRegistry
 from app.core.ratelimit import RequestMetrics, TokenBucket
+from app.core.resolver import NameResolver
 from app.core.scheduler import Scheduler
 from app.core.schema import SchemaRegistry, summarize_customs
 from app.core.store import Store
@@ -41,11 +42,13 @@ from app.core.timefmt import from_store, now_jst
 from app.notifiers.dispatcher import Dispatcher
 from app.notifiers.slack import SlackNotifier
 from app.watchers.base import Context, Watcher
+from app.watchers.progress_flow import ProgressFlowWatcher
 from app.watchers.resource_watch import ResourceWatcher
 
 # 実装済みのウォッチャー種別。設定の `type` で選ぶ（既定は resource_watch）
 WATCHER_TYPES: dict[str, type[Watcher]] = {
     "resource_watch": ResourceWatcher,
+    "progress_flow": ProgressFlowWatcher,
 }
 
 
@@ -148,6 +151,10 @@ def _build_runtime(
     store = Store(app_config.store_path)
     schema = SchemaRegistry(client, logger)
     master = MasterRegistry(client, logger)
+    # 求職者名・求人名・企業名のキャッシュ。**ウォッチャー間で共有する**。
+    # 分けるとキャッシュが効かず、そのぶんリクエスト数が増える（仕様書 5.3）
+    resolver = NameResolver(client=client, logger=logger,
+                            sources=app_config.name_resolution)
 
     slack = SlackNotifier(
         app_config.slack_webhook_envs, logger,
@@ -157,7 +164,7 @@ def _build_runtime(
                             max_per_cycle=app_config.max_notifications_per_cycle)
 
     ctx = Context(
-        client=client, store=store, schema=schema, master=master,
+        client=client, store=store, schema=schema, master=master, resolver=resolver,
         dispatcher=dispatcher, logger=logger, app_config=app_config,
         templates=templates, bootstrap=bootstrap,
     )
@@ -192,8 +199,9 @@ def _build_runtime(
 
     # 7. 通知先の設定確認。URL が無いチャンネルは起動時に気づきたい
     configured = set(slack.configured_channels())
-    required = {w.config.get("notify", {}).get("channel_key")
-                for w in watchers if w.enabled}
+    # 1ウォッチャーが複数のチャンネルへ送りうる（要件3の `special_transitions`）。
+    # 設定漏れは dead letter に落ちてから気づくのでは遅い
+    required = {key for w in watchers if w.enabled for key in w.channel_keys()}
     missing = sorted(c for c in required if c and c not in configured)
     if missing:
         raise ConfigError(f"slack webhook URL is not set for channels: {missing}")

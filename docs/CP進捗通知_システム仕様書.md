@@ -161,7 +161,7 @@ Slack またはメールで関係者に通知する。CP には一切書き戻�
 
 | ウォッチャー ID | 要件 | 間隔 | 優先度 | 予算 | 通知手段 | 状態 |
 |---|---|---:|---:|---:|---|---|
-| `progress_flow` | 2 + 3 | 5分 | 1 | 60 | Slack | ⬜ 未実装。`progress_history` の**追加**を検知する（項目変化とは別の仕組み） |
+| `progress_flow` | 2 + 3 | 5分 | 1 | 60 | Slack | ✅ 実装済み（`app/watchers/progress_flow.py`）。`progress_history` の**追加**を検知する（項目変化とは別の仕組み） |
 | `career_action_watch` | 4 | 15分 | 3 | 120 | メール | ⏸ メール送信がペンディング（8.4節） |
 
 優先度は小さいほど先に実行される。**同時に走るウォッチャーは常に0か1**（3.5節）。
@@ -302,6 +302,8 @@ CP はステータス変更を進捗履歴 API 経由で行う設計であり、
 
 ### 3.2.3 処理仕様
 
+実装: `app/watchers/progress_flow.py`。
+
 ```
 1. POST /v1/ext2/progress_history/search
      condition: PROGRESS_HISTORY#INSERT_DATE GE <カーソル − オーバーラップ60秒>
@@ -309,27 +311,35 @@ CP はステータス変更を進捗履歴 API 経由で行う設計であり、
      limit:     100
    → 新しく作られた進捗履歴の ID 一覧（形式 "{progressId}_{枝番}"）
 
-2. ID を文字列分解して progressId と枝番を取り出す（API 呼び出し不要）
-   ※ progress_history の枝番は 1 始まり（実測）。ただし親IDごとの最小枝番を
-      基準に判定し、起点に依存しない実装にすること
-
-3. POST /v1/ext2/progress_history/select/{id}
-     itemIds: PROGRESS_HISTORY#PROGRESS_STATUS_ID,
+2. POST /v1/ext2/progress_history/select/{id}
+     itemIds: PROGRESS_HISTORY#PROGRESS_ID,
+              PROGRESS_HISTORY#PROGRESS_ID_SUB,
+              PROGRESS_HISTORY#PROGRESS_STATUS_ID,
               PROGRESS_HISTORY#PROGRESS_DATE,
               PROGRESS_HISTORY#CAREER_CHARGE_ID,
-              PROGRESS_HISTORY#ORDER_CHARGE_ID
-   → 遷移先ステータス
+              PROGRESS_HISTORY#ORDER_CHARGE_ID,
+              PROGRESS_HISTORY#ESTIMATED_SALES_AMOUNT,
+              PROGRESS_HISTORY#ESTIMATED_SALES_ACCURACY,
+              PROGRESS_HISTORY#ESTIMATED_SALES_MONTH
+   → 遷移先ステータスと親の進捗 ID、および見込3項目
+   ※ **項目を足してもリクエスト数は増えない。**select は 1リクエスト = 1リソースで、
+      itemIds の数はリクエスト数に影響しない（レスポンスサイズだけ増える）。
+   ※ progressId と枝番は ID 文字列の分解でも得られるが、この select は
+      どのみち必要なので、**同じ1リクエストに含めて確実な値を使う**（追加コストなし）。
+      ID 文字列の分解は値が欠けたときのフォールバックとして残す（rpartition）。
+   ※ 枝番の起点はリソースによって違う（progress_history は 1 始まり、
+      career_action は 0 始まり）。**枝番を判定に使わない**ことで起点に依存しない。
 
-4. POST /v1/ext2/progress/select/{progressId}
-     itemIds: PROGRESS#CAREER_ID, PROGRESS#ORDER_ID, PROGRESS#STATUS_ID,
-              PROGRESS#PROGRESS_CHARGE_ID
+3. POST /v1/ext2/progress/select/{progressId}
+     itemIds: PROGRESS#CAREER_ID, PROGRESS#ORDER_ID, PROGRESS#CLIENT_ID,
+              PROGRESS#STATUS_ID, PROGRESS#PROGRESS_CHARGE_ID
    → 誰の・どの求人か
 
-5. resolver で求職者名・求人名・企業名を解決（キャッシュヒット時は0リクエスト）
+4. resolver で求職者名・求人名・企業名を解決（キャッシュヒット時は0リクエスト）
 
-6. マスタでステータスコードをラベルに変換して Slack へ送信
+5. マスタでステータスコードをラベルに変換して Slack へ送信
 
-7. snapshots は不要（履歴の追加そのものがイベント）。カーソルを前進
+6. 遷移先ステータスを「次回の遷移前ステータス」として持ち越す。カーソルを前進
 ```
 
 **`PROGRESS#INTRODUCTION_DATE`（紹介日）は要件3の判定に使えない。**
@@ -337,6 +347,26 @@ CP はステータス変更を進捗履歴 API 経由で行う設計であり、
 
 **`PROGRESS#PROGRESS_CHARGE_ID`（進捗の担当者）は項目一覧 xlsx に存在しないが実環境には存在する。**
 通知本文に使える。
+
+**`PROGRESS#CLIENT_ID` を使うと企業名が求人を経由せずに引ける。**
+進捗が企業 ID を直接持っているため、`order/select` → `CLIENT_ID` → `client/select` の
+2ホップが不要になる（1ホップぶん節約）。
+
+#### 遷移前ステータス（`from_status`）の持ち方
+
+**CP は「遷移前のステータス」を返さない。**`progress/select` の `PROGRESS#STATUS_ID` は
+**遷移後の値**であり（実測: `21_2` 追加後は `'11'`）、遷移前の値はどこにも残っていない。
+
+実装は **1つ前に観測したステータスを `snapshots` に持ち越す**（追加リクエスト 0）。
+`snapshots` は差分検知には使わない（履歴の追加そのものがイベント）。
+このウォッチャー専用の持ち越し領域として使う。
+
+| | |
+|---|---|
+| キー | `(watcher_id, resource_id=進捗ID, item_id=PROGRESS_HISTORY#PROGRESS_STATUS_ID)` |
+| 更新のタイミング | **通知を送ってから。**先に更新すると通知失敗時に遷移前の値が失われる |
+| 通知しなかった遷移 | **持ち越しは更新する。**飛ばすと次の通知の「遷移前」が古い値になる |
+| 初めて観測する進捗 | 遷移前は**不明**。通知本文には `(不明)` と出す。推測で埋めない |
 
 ### 3.2.4 冪等キーの注意
 
@@ -349,6 +379,12 @@ CP はステータス変更を進捗履歴 API 経由で行う設計であり、
 `resource_id` に進捗履歴 ID（枝番を含む）を使えば足りる。
 `progressId + ステータス値` で冪等キーを作ると、`16 → 11 → 16` と往復したときに
 2回目の `16` が重複扱いされて通知が消える（`21_1` と `21_3` は同じステータス値 `16`）。
+
+> ⚠️ **`payload_hash` に `from_status` を入れてはいけない。**
+> オーバーラップで同じ履歴を再取得したとき、持ち越し済みの値と突き合わせて
+> `11 → 11` のような別の組み合わせになり、ダイジェストが変わって重複除去をすり抜ける。
+> 進捗履歴は追記専用なので、`payload_hash` は**その履歴自身の値**
+> （遷移先ステータス・進捗日）だけから取る。
 
 ### 3.2.5 拾えないもの
 
@@ -388,6 +424,7 @@ CP の「進捗ステータス設定」に定義された遷移グラフは API 
 ```yaml
 watchers:
   progress_flow:
+    type: "progress_flow"
     enabled: true
     interval_minutes: 5
     priority: 1
@@ -401,23 +438,68 @@ watchers:
       channel_key: "progress_flow"
       template: "progress_transition"
 
-    # 要件3: 特定の遷移だけ別チャンネル・別文面にする
+    # 要件3: 特定の遷移だけ別チャンネル・別文面にする。**先に書いたルールが勝つ。**
+    # 当たったものは一般チャンネルには出ない（1遷移につき通知は1通）
     special_transitions:
       - name: "求人紹介OK"
         to_status: "11"             # 応募意思確認中(求人)。実測で確定
         from_status: "16"           # 社内確認中（省略可。指定すると誤検知が減る）
+        from_status_required: false # 下記参照
         notify:
           channel_key: "job_intro"
           template: "job_intro_ok"
 ```
+
+`notify_all_transitions: false` かつ `watched_statuses: []` は
+**何も通知されない設定**なので、起動時に拒否する。
+
+#### `from_status_required`（既定 `false`）
+
+その進捗を初めて観測したときは遷移前ステータスが分からない（3.2.3）。
+このとき `from_status: "16"` の指定をどう扱うかを決める。
+
+| 値 | 遷移前が不明なときの扱い |
+|---|---|
+| `false`（既定） | **一致とみなす**（`to_status` だけで判定）。取りこぼしは通知漏れであり、重複通知より重い |
+| `true` | 一致とみなさない。一般チャンネルへ送る |
+
+ブートストラップ直後は全進捗の遷移前が不明なので、`true` にすると
+そのあいだ要件3の通知が `job_intro` に出ない。実データを見てから判断する。
+
+#### 通知本文のテンプレート変数
+
+`config/templates.yaml`。**未定義の変数を書くと起動時に失敗する**（実行時ではない）。
+
+| 変数 | 内容 |
+|---|---|
+| `transition_name` | ルール名（`求人紹介OK` など） |
+| `career_name` / `order_name` / `client_name` | 求職者名 / 求人名（ポジション名） / 企業名 |
+| `from_label` / `to_label` | 遷移前後のステータスラベル。遷移前が不明なら `(不明)` |
+| `from_status` / `to_status` | 同じくコード値 |
+| `progress_date` | 進捗日 |
+| `progress_charge` / `career_charge` / `order_charge` | 進捗担当 / 求職者担当 / 求人担当 |
+| `progress_id` / `progress_sub` / `resource_id` | 進捗ID / 枝番 / 進捗履歴ID |
+| `estimated_amount` | 見込回収金額。**単位は万円**（CP 画面のラベルが「（万円）」） |
+| `estimated_accuracy` | 見込確度（`MST_ESTIMATED_SALES_ACCURACY` でラベル化済み） |
+| `estimated_month` | 見込計上月 |
+
+**見込3項目は「求人紹介OK」の小画面で入力するもの**（13章）。既定では `job_intro_ok`
+（要件3）にだけ載せている。入力されなければ `(未設定)` と出る（実測: 未入力なら `None`）。
+要件2の一般テンプレートにも同じ変数が使えるが、通常の遷移では空欄になる。
+
+単位や見出しの文言は**テンプレート側に書く。**コードは値だけを渡す
+（`rules/50-code-style.md`）。
 
 ### 3.2.8 遅延と流量
 
 | | |
 |---|---|
 | 最大遅延 | 5分 + 処理時間 |
-| 1サイクル | 検索1 + 遷移件数 ×（履歴select 1 + 進捗select 1 + 名前解決 0〜2） |
+| 1サイクル | 検索1 + 遷移件数 ×（履歴select 1 + 進捗select 1 + 名前解決 0〜3） |
 | 想定 | 約3 req/サイクル、約860 req/日 |
+
+名前解決は求職者・求人・企業の3つ（`PROGRESS#CLIENT_ID` を使うため企業も1ホップ）。
+いずれもキャッシュされるので、**同じ進捗が続けて動く場合は 0** になる。
 
 ---
 
@@ -985,12 +1067,13 @@ app_root/
 │   │   ├── schema.py            # schema の取得・キャッシュ・項目ID検証
 │   │   ├── master.py            # コードマスタの取得・キャッシュ・ラベル変換
 │   │   ├── resolver.py          # career/order/client の名前解決キャッシュ
+│   │   ├── paging.py            # 検索のページング（ウォッチャー間で共有）
 │   │   ├── store.py             # SQLite
 │   │   ├── timefmt.py           # JST ⇔ CP形式の変換を集約
 │   │   └── scheduler.py         # ウォッチャー登録・間隔管理・例外隔離・予算配分
 │   ├── watchers/
 │   │   ├── base.py                  # Watcher 基底
-│   │   ├── career_status.py         # 要件1
+│   │   ├── resource_watch.py        # 要件1（リソース横断の項目変化。設定で対象を足せる）
 │   │   ├── progress_flow.py         # 要件2 + 要件3
 │   │   └── career_action_watch.py   # 要件4
 │   └── notifiers/
@@ -1058,7 +1141,16 @@ get_master(code_name) -> dict[code, label]
 | キャッシュ | TTL | サイズ |
 |---|---|---|
 | `career_id -> (姓, 名)` | 1時間 | LRU 2000 |
-| `order_id -> (求人名, 企業名)` | 6時間 | LRU 1000 |
+| `order_id -> 求人名（ポジション名）` | 6時間 | LRU 1000 |
+| `client_id -> 企業名` | 6時間 | LRU 1000 |
+
+企業名は**求人を経由せず `PROGRESS#CLIENT_ID` から直接引く。**
+進捗が企業 ID を持っているため、`order/select` → `CLIENT_ID` → `client/select` の
+2ホップにならない。企業のキャッシュは求人より効きやすい（1企業に複数求人がぶら下がる）。
+
+どのリソースのどの項目から名前を作るかは `config/app.yaml` の `name_resolution` に書く。
+**項目 ID をコードに直書きしない**（4.7節）。設定に書いた項目 ID は起動時に schema と
+突き合わせ、存在しなければ起動を失敗させる。
 
 **このキャッシュがリクエスト数に直結する。**要件2で進捗が動くたびに `career/select` と
 `order/select` を叩くと通知1件あたり4リクエストになる。キャッシュが効けば2リクエストに落ちる。
@@ -1075,11 +1167,12 @@ get_master(code_name) -> dict[code, label]
 | 2 | `core/schema.py`（項目 ID の実在検証）+ `core/master.py` | ✅ 実装済み |
 | 3 | `core/store.py` + `core/scheduler.py` + `notifiers/`（Slack） | ✅ 実装済み |
 | 4 | **`career_status`（要件1）** | ✅ **実装済み・実環境で動作確認** |
-| 5 | `progress_flow`（要件2+3） | ⬜ 未着手 |
+| 5 | **`progress_flow`（要件2+3）** + `core/resolver.py` | ✅ **実装済み・実環境で動作確認**（2026-08-09） |
 | 6 | `career_action_watch`（要件4） | ⏸ メール送信がペンディング（8.4節） |
-| 7 | 実データを見て `special_transitions`（要件3）と通知文面を調整 | ⬜ 5 の後 |
+| 7 | 実データを見て `special_transitions`（要件3）と通知文面を調整 | ⬜ 5 の実データ待ち |
 
-**5 に着手する前に、要件1 の実データ（実際に飛んだ通知）を見て設計を見直す。**
+**7 は実際に進捗を動かした通知を見てから。**モードA（全遷移）で開始しているので、
+うるさければ `watched_statuses` で絞る。フロー定義を先に推測で埋めない（3.2.2）。
 
 ### 実装済みの範囲で確認できていること（2026-08-07）
 
@@ -1111,6 +1204,52 @@ get_master(code_name) -> dict[code, label]
 | **個人情報が Slack に流れる** | 氏名・連絡先・年収などが変更されると、その値が本文に載る。**チャンネルの参加者を絞ること** |
 | **通知量** | 求職者に対する任意の更新が通知になる。1サイクル 50 件を超えるとサマリに切り替わる |
 | **SQLite の行数** | 229項目 × 求職者数。検証テナント（18名）で 4,122 行 |
+
+### 要件2/3 の実装で確認できていること（2026-08-09）
+
+| 確認 | 結果 |
+|---|---|
+| 単体テスト | ✅ **117 件**すべて成功（要件2/3 が 24 件、`core/resolver.py` が 11 件） |
+| **`--check` の起動時チェック（実環境）** | ✅ **成功。**`progress_history`(20) / `progress`(26) / `order`(169) / `client`(82) の schema を実環境から取得し、使用する **16 項目すべての実在を検証**。テンプレート変数とチャンネルも検証 |
+| 後戻りの区別 | ✅ `16 → 11 → 16` が 3 通に分かれる（枝番を冪等キーに含めているため）。単体テスト |
+| オーバーラップ再取得 | ✅ 二重通知しない（`from_status` をダイジェストから除外）。単体テスト |
+| **Slack への実送信** | ✅ **確認済み。**要件2・要件3ともに着信。下記 |
+
+### ✅ 実環境での通し確認（2026-08-09）
+
+進捗 `21`（求職者ID 18）を CP 画面から動かし、2 件の通知を受信した。
+
+| 履歴 | 遷移 | 判定 | 送信先 |
+|---|---|---|---|
+| `21_4` | **(不明)** → `11` 応募意思確認中(求人) | 要件3（求人紹介OK） | `job_intro` |
+| `21_5` | `11` 応募意思確認中(求人) → `12` 書類提出待ち | 要件2（通常の進行） | `progress_flow` |
+
+**確定したこと:**
+
+1. **遷移前ステータスの持ち越しが実データで動いた。**`21_4` の遷移先が
+   `21_5` の遷移前としてそのまま出ている。CP はこの値を返さないので、
+   `snapshots` への持ち越し（3.2.3）が唯一の入手経路。**追加リクエストは 0。**
+2. **`from_status_required: false`（既定）の判断が正しかった。**
+   `21_4` はこのアプリが進捗 `21` を初めて観測した履歴なので遷移前が不明。
+   ルールには `from_status: "16"` と書いてあるが、既定では `to_status` だけで判定するため
+   `job_intro` に届いた。**`true` にしていたらこの通知は一般チャンネルに落ちていた。**
+3. ブートストラップ以前の履歴（`21_1` 〜 `21_3`）は通知されていない。
+   `--bootstrap` がカーソルを実行時刻に置く挙動が期待どおり。
+4. 名前解決（求職者名・求人名・企業名）とマスタのラベル変換が本文に反映されている。
+
+**`(不明)` はその進捗を初めて観測したときだけ出る。**`21_5` 以降は持ち越しがあるので出ない。
+
+#### 手順（再実施するとき）
+
+```powershell
+py -3 -m app.main --bootstrap --watcher progress_flow        # カーソルを現在時刻に置くだけ（0 req）
+# ここで CP 画面から進捗を1つ動かす（「求人紹介OK」→「新規登録」）
+py -3 -m app.main --once --watcher progress_flow --dry-run   # まず ops チャンネルへ寄せて確認
+py -3 -m app.main --once --watcher progress_flow             # 本来のチャンネルへ
+```
+
+`--bootstrap` はカーソルを**実行した瞬間**に置く。既存の進捗履歴は通知されない。
+ブートストラップから通し確認までに間が空くと、そのあいだの遷移がまとめて届く。
 
 ---
 

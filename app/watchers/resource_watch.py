@@ -32,6 +32,7 @@ from typing import Any
 from app.core.budget import RequestBudget
 from app.core.errors import ConfigError
 from app.core.events import CycleResult, Notification
+from app.core.paging import search_ids
 from app.core.schema import ItemDef
 from app.core.store import payload_hash, value_hash
 from app.core.timefmt import now_jst, to_cp_datetime
@@ -285,27 +286,18 @@ class ResourceWatcher(Watcher):
 
     def _search_page_range(self, ctx: Context, budget: RequestBudget, since,
                            max_pages: int) -> tuple[list[str], bool]:
-        """変化した ID を集める。戻り値の 2 つ目は「ページ上限で打ち切ったか」。
-
-        `sort` は必ず指定する。未指定だと順序が保証されずページングが壊れる。
-        """
-        condition = self._build_condition(since)
-        sort = [{"itemId": self.update_date_item, "order": "asc"}]
-
-        ids: list[str] = []
-        offset = 0
-        for _ in range(max_pages):
-            page, count = ctx.client.search(
-                self.resource, condition=condition, sort=sort,
-                limit=100, offset=offset, budget=budget)
-            ids.extend(page)
-            offset += len(page)
-            if not page or len(page) < 100 or offset >= count:
-                return ids, False
-
-        ctx.logger.warn("paging_capped", watcher_id=self.id, resource=self.resource,
-                        max_pages=max_pages, collected=len(ids))
-        return ids, True
+        """変化した ID を集める。戻り値の 2 つ目は「ページ上限で打ち切ったか」。"""
+        return search_ids(
+            ctx.client,
+            self.resource,
+            condition=self._build_condition(since),
+            # `sort` は必ず指定する。未指定だと順序が保証されずページングが壊れる
+            sort=[{"itemId": self.update_date_item, "order": "asc"}],
+            budget=budget,
+            logger=ctx.logger,
+            watcher_id=self.id,
+            max_pages=max_pages,
+        )
 
     def _build_condition(self, since) -> dict[str, Any] | None:
         items: list[dict[str, Any]] = []

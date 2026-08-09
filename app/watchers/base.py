@@ -17,6 +17,7 @@ from app.core.errors import BudgetExhausted, CpNotifyError
 from app.core.events import CycleResult
 from app.core.logging import Logger
 from app.core.master import MasterRegistry
+from app.core.resolver import NameResolver
 from app.core.schema import SchemaRegistry
 from app.core.store import Store
 from app.notifiers.dispatcher import Dispatcher
@@ -30,6 +31,7 @@ class Context:
     store: Store
     schema: SchemaRegistry
     master: MasterRegistry
+    resolver: NameResolver
     dispatcher: Dispatcher
     logger: Logger
     app_config: AppConfig
@@ -66,6 +68,16 @@ class Watcher(ABC):
     @abstractmethod
     def required_masters(self) -> list[str]:
         """通知本文で使うマスタ名。起動時に先読みする。"""
+
+    def channel_keys(self) -> list[str]:
+        """このウォッチャーが送りうる通知先の論理名。
+
+        起動時に「Webhook URL が設定されていないチャンネル」を検出するために使う
+        （`main._build_runtime`）。**送り先が複数あるウォッチャーは必ず上書きすること。**
+        設定漏れが実行時まで分からないと、通知が dead letter に落ちてから気づくことになる。
+        """
+        key = (self.config.get("notify") or {}).get("channel_key")
+        return [key] if key else []
 
     @abstractmethod
     def execute(self, ctx: Context, budget: RequestBudget) -> CycleResult:
