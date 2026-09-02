@@ -5,7 +5,7 @@ Python 版（`app/`）を Google Apps Script へ移植するための作業単�
 
 | Phase | 内容 | 依存 | 状態 |
 |---|---|---|---|
-| [Phase1](Phase1.md) | 共通基盤（設定・時刻・流量制御・認可・HTTPクライアント） | なし | ⬜ 未着手 |
+| [Phase1](Phase1.md) | 共通基盤（設定・時刻・流量制御・認可・HTTPクライアント） | なし | 🟡 実装済み・**実環境確認待ち**（`checkSetup()` の実行） |
 | [Phase2](Phase2.md) | 状態管理と実行基盤（シート・Properties・ロック・コミット点） | Phase1 | ⬜ 未着手 |
 | [Phase3](Phase3.md) | 要件1 `career_status` ＋ Slack 通知 | Phase2 | ⬜ 未着手 |
 | [Phase4](Phase4.md) | 要件2/3 `progress_flow` | Phase3 | ⬜ 未着手 |
