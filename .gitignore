@@ -16,3 +16,7 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# GAS / clasp
+node_modules/
+.clasprc.json

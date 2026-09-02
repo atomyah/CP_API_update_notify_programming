@@ -1,0 +1,5 @@
+# パターンは rootDir（src）からの相対。src の外にあるファイルは push されない。
+**/**
+!appsscript.json
+!**/*.js
+!**/*.html
