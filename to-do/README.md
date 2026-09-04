@@ -6,7 +6,7 @@ Python 版（`app/`）を Google Apps Script へ移植するための作業単�
 | Phase | 内容 | 依存 | 状態 |
 |---|---|---|---|
 | [Phase1](Phase1.md) | 共通基盤（設定・時刻・流量制御・認可・HTTPクライアント） | なし | ✅ **完了**（2026-09-02。`runCoreTests` 22件通過 / `checkSetup()` を実環境で確認） |
-| [Phase2](Phase2.md) | 状態管理と実行基盤（シート・Properties・ロック・コミット点） | Phase1 | 🟡 **実装済み・実機確認待ち**（2026-09-04。`clasp push` 済み。**GAS 上で `initSheets()` / `runAllTests()` / `runDummyCycle()` が未実行**） |
+| [Phase2](Phase2.md) | 状態管理と実行基盤（シート・Properties・ロック・コミット点） | Phase1 | ✅ **完了**（2026-09-04。`runAllTests` 55件通過 / `initSheets()` と `runDummyCycle()` を実環境で確認） |
 | [Phase3](Phase3.md) | 要件1 `career_status` ＋ Slack 通知 | Phase2 | ⬜ 未着手 |
 | [Phase4](Phase4.md) | 要件2/3 `progress_flow` | Phase3 | ⬜ 未着手 |
 | [Phase5](Phase5.md) | 運用（トリガー本設定・日次サマリ・通し確認） | Phase4 | ⬜ 未着手 |
