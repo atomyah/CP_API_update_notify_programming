@@ -11,7 +11,12 @@
  */
 function initSheets() {
   const created = Sheets.ensureAll();
+  const where = Sheets.location();
   Log.info('sheets_ready', {
+    // 3シートはバインド先のスプレッドシートの中にタブとしてできる。
+    // https://docs.google.com/spreadsheets/d/<spreadsheet_id>/edit で開ける
+    spreadsheet_name: where.spreadsheet_name,
+    spreadsheet_id: where.spreadsheet_id,
     created: created,
     snapshots_rows: Sheets.dataRowCount(Sheets.NAMES.SNAPSHOTS),
     notified_rows: Sheets.dataRowCount(Sheets.NAMES.NOTIFIED),

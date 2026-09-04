@@ -71,8 +71,9 @@ SQLite の PRIMARY KEY が二重通知を防いでいた。シートに一意制
 
 ## 完了条件
 
-- [ ] `initSheets()` で `snapshots` `notified` `dead_letter` の3シートができる
-      — **未確認。**GAS のエディタで実行する
+- [x] `initSheets()` で `snapshots` `notified` `dead_letter` の3シートができる
+      — **GAS 上で確認済み（2026-09-04）。**バインド先スプレッドシートにタブとして3枚できた。
+      （＝コンテナバインドであることも実機で確認できた。仕様書 11.2 の前提どおり）
 - [x] `runAllTests()`（`runCoreTests` + `runStateTests`）が通る
       — **ローカルのシムで 55件通過（Phase1 22 / Phase2 33）。GAS 上では未実行**
   - [x] **失敗を返したサイクルでカーソルが進まない**（snapshots も書かれない・失敗カウンタが進む）

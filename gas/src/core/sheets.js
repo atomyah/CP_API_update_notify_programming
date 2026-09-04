@@ -47,6 +47,15 @@ const Sheets = (function () {
     return ss;
   }
 
+  /**
+   * バインド先を人が特定できる情報。**URL は出さない**（ログの秘匿ルールに合わせる）。
+   * ID があれば `https://docs.google.com/spreadsheets/d/<id>/edit` で開ける。
+   */
+  function location() {
+    const ss = spreadsheet();
+    return { spreadsheet_name: ss.getName(), spreadsheet_id: ss.getId() };
+  }
+
   /** 3シートを作る。既にあれば見出しだけ確認する。手動実行の initSheets() から呼ぶ。 */
   function ensureAll() {
     const created = [];
@@ -135,6 +144,7 @@ const Sheets = (function () {
   return {
     NAMES: NAMES,
     HEADERS: HEADERS,
+    location: location,
     ensureAll: ensureAll,
     readAll: readAll,
     writeAll: writeAll,
