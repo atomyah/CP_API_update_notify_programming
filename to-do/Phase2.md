@@ -87,12 +87,17 @@ SQLite の PRIMARY KEY が二重通知を防いでいた。シートに一意制
 
 ### 実機で確認すること（GAS のエディタで実行する）
 
-1. `initSheets()` → 3シートができる
-2. `runAllTests()` → 55件通過
-3. `bootstrapDummyWatcher()` → 通知ゼロ・`snapshots` に2行・カーソルが記録される
-4. `runDummyCycle()` を1分以上あけて実行 → 2件通知（ログ）・`notified` に2行
-5. 続けてもう一度 `runDummyCycle()` → 追加の通知が出ない
-6. `showState()` → カーソル・失敗カウンタ・行数が読める
+1. [x] `initSheets()` → 3シートができる — **確認済み 2026-09-04**
+2. [ ] `runAllTests()` → 55件通過 — 実行はしたが `all_tests_passed` の `total`/`failed` を未確認
+3. [x] `runDummyCycle()` を1分以上あけて実行 → 2件通知（ログ）・カーソル前進 — **確認済み 2026-09-04**
+   （`events_detected:2` / `events_notified:2` / `snapshot_sheets_written:1`）
+4. [x] 続けてもう一度 `runDummyCycle()` → 追加の通知が出ない — **確認済み 2026-09-04**
+   （`events_detected:0` / `snapshot_sheets_written:0`。**書き戻した snapshots が次の実行で読めている**）
+5. [ ] `showState()` → カーソル・失敗カウンタ・行数が読める
+
+**⚠️ テストの実行ログには `Log.error` が7件・`Log.warn` が2件出るが、これは正常。**
+エラー経路（失敗・自動停止・通知後のクラッシュ・ロック競合・壊れた保存値）を
+意図的に踏むテストが出しているもの。合否は `all_tests_passed` / `test_failed` だけで判断する。
 
 ## やらないこと
 
