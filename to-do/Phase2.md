@@ -26,6 +26,15 @@ SQLite の4テーブルを GAS に置き換え、ウォッチャーを載せる�
 | `src/setup.js` | `initSheets()` — シートを作る。手動実行 |
 | `src/tests/test_state.js` | 状態管理のテスト |
 
+実装時に追加したもの:
+
+| ファイル | 責務 |
+|---|---|
+| `src/core/events.js` | `CycleResult`（Python 版 `app/core/events.py` の移植）。Runner がこれだけを見てコミットを決める |
+| `src/watchers/dummy.js` | 完了条件のダミーウォッチャー。`runDummyCycle()` / `bootstrapDummyWatcher()` |
+
+`src/core/log.js` は Phase1 で実装済みのため、この Phase では変更していない。
+
 ## 状態の置き場所（仕様書 11.2 の決定。変えない）
 
 | 元テーブル | 置き場所 |
@@ -63,14 +72,26 @@ SQLite の PRIMARY KEY が二重通知を防いでいた。シートに一意制
 ## 完了条件
 
 - [ ] `initSheets()` で `snapshots` `notified` `dead_letter` の3シートができる
-- [ ] `runCoreTests()` に加えたテストが通る
-  - [ ] **失敗を返したサイクルでカーソルが進まない**
-  - [ ] 予算切れ（`exhausted`）でカーソルも `snapshots` も進まない
-  - [ ] 同じ冪等キーの2回目が除去される
-  - [ ] `LockService` が取れないとき何もせず抜ける
-- [ ] ダミーのウォッチャー（CP を叩かず固定のイベントを返すもの）を `Runner` で実行し、
-      通知の代わりにログへ出して一連の流れが動く
-- [ ] 構造化ログが1行1 JSON で出ており、個人情報を含まない
+      — **未確認。**GAS のエディタで実行する
+- [x] `runAllTests()`（`runCoreTests` + `runStateTests`）が通る
+      — **ローカルのシムで 55件通過（Phase1 22 / Phase2 33）。GAS 上では未実行**
+  - [x] **失敗を返したサイクルでカーソルが進まない**（snapshots も書かれない・失敗カウンタが進む）
+  - [x] 予算切れ（`exhausted`）でカーソルも `snapshots` も進まない（経過時間切れも同様）
+  - [x] 同じ冪等キーの2回目が除去される（サイクル内・サイクルまたぎの両方）
+  - [x] `LockService` が取れないとき何もせず抜ける（シートもプロパティも触らない）
+  - [x] 通知後にコミットできなくても、次サイクルで二重通知しない
+- [x] ダミーのウォッチャー（`watchers/dummy.js`）を `Runner` で実行し、
+      通知の代わりにログへ出して一連の流れが動く — **テスト上は通過。GAS 上では未実行**
+- [x] 構造化ログが1行1 JSON で出ており、個人情報を含まない
+
+### 実機で確認すること（GAS のエディタで実行する）
+
+1. `initSheets()` → 3シートができる
+2. `runAllTests()` → 55件通過
+3. `bootstrapDummyWatcher()` → 通知ゼロ・`snapshots` に2行・カーソルが記録される
+4. `runDummyCycle()` を1分以上あけて実行 → 2件通知（ログ）・`notified` に2行
+5. 続けてもう一度 `runDummyCycle()` → 追加の通知が出ない
+6. `showState()` → カーソル・失敗カウンタ・行数が読める
 
 ## やらないこと
 

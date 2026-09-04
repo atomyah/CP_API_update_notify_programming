@@ -96,9 +96,56 @@ const T = (function () {
     };
   }
 
+  /**
+   * Sheets の代わり。メモリ上の2次元配列で持つ。
+   * **本番のシートを触るテストを書かないこと。**
+   *
+   * 呼び出し回数を数えている。「1サイクルで setValues が何回走ったか」
+   * 「中断したサイクルで書かれていないか」を検証するため（仕様書 11.3 / 11.4）。
+   */
+  function fakeSheets(initial) {
+    const data = {};
+    const counts = { read: 0, write: 0, append: 0 };
+    const names = Sheets.NAMES;
+    Object.keys(names).forEach(function (key) {
+      const name = names[key];
+      const seed = (initial && initial[name]) || [Sheets.HEADERS[name].slice()];
+      data[name] = copy(seed);
+    });
+
+    function copy(values) {
+      return values.map(function (row) { return row.slice(); });
+    }
+
+    return {
+      NAMES: names,
+      HEADERS: Sheets.HEADERS,
+      counts: counts,
+      readAll: function (name) { counts.read += 1; return copy(data[name]); },
+      writeAll: function (name, values) { counts.write += 1; data[name] = copy(values); },
+      append: function (name, rows) {
+        counts.append += 1;
+        copy(rows).forEach(function (row) { data[name].push(row); });
+      },
+      dataRowCount: function (name) { return Math.max(0, data[name].length - 1); },
+      dump: function (name) { return copy(data[name]); },
+    };
+  }
+
+  /** LockService の代わり。`acquired` が false なら常に取れない。 */
+  function fakeLock(acquired) {
+    let released = false;
+    return {
+      tryLock: function () { return acquired !== false; },
+      releaseLock: function () { released = true; },
+      wasReleased: function () { return released; },
+    };
+  }
+
   return {
     test: test, assert: assert, assertEquals: assertEquals, assertNear: assertNear,
     assertThrows: assertThrows, run: run, reset: reset,
     fakeProperties: fakeProperties, fakeClock: fakeClock,
+    fakeSheets: fakeSheets, fakeLock: fakeLock,
   };
 })();
