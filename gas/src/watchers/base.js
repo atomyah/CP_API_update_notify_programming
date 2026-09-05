@@ -6,19 +6,25 @@
  * - **ウォッチャーはカーソルを書かない。**進めたいカーソルを CycleResult に載せて返し、
  *   実際に書くのは Runner。コミット点を1箇所に閉じるため（仕様書 11.4）。
  *
- * ctx に入っているもの（Phase2 時点）:
+ * ctx に入っているもの:
  *
  * | キー | 中身 |
  * |---|---|
  * | `watcherId` | ウォッチャーID |
  * | `state` | 状態管理（core/state.js） |
- * | `snapshots` | このウォッチャーの SnapshotSet。**書き戻しは Runner が行う** |
+ * | `snapshots` | このウォッチャーの SnapshotSet（ハッシュ）。**書き戻しは Runner が行う** |
+ * | `rawValues` | 遷移前後を通知する項目の生値。**対象項目を設定で限定する**（rules/40） |
  * | `cursor` | 実行開始時のカーソル。無ければ null |
  * | `budget` | 1サイクルのリクエスト予算（件数と経過時間の両方で切れる） |
  * | `bootstrap` | 基準づくりだけを行うか。**true のとき通知しない** |
  * | `config` | ウォッチャー個別の設定 |
+ * | `schema` | リソース定義（core/schema.js）。項目タイプと参照マスタの解決に使う |
+ * | `master` | コード値 → ラベル（core/master.js） |
+ * | `templates` | 通知本文のテンプレート（templates.js） |
+ * | `dispatcher` | 通知の送出口。**冪等除去と dead_letter はこの中**（notifiers/） |
+ * | `startedAt` | サイクルの開始時刻。カーソルにはこれを入れる |
  *
- * CP クライアント・schema・マスタ・通知は Phase3 で足す。
+ * CP API は `CpClient` を直接呼ぶ（唯一の HTTP 出口。rules/20-rate-limit.md）。
  */
 const Watchers = (function () {
 

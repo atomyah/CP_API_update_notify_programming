@@ -19,6 +19,7 @@ function initSheets() {
     spreadsheet_id: where.spreadsheet_id,
     created: created,
     snapshots_rows: Sheets.dataRowCount(Sheets.NAMES.SNAPSHOTS),
+    snapshot_values_rows: Sheets.dataRowCount(Sheets.NAMES.SNAPSHOT_VALUES),
     notified_rows: Sheets.dataRowCount(Sheets.NAMES.NOTIFIED),
     dead_letter_rows: Sheets.dataRowCount(Sheets.NAMES.DEAD_LETTER),
   });
@@ -31,7 +32,7 @@ function initSheets() {
  */
 function showState(watcherIds) {
   const state = State.create();
-  const ids = watcherIds || [DummyWatcher.WATCHER_ID];
+  const ids = watcherIds || [CareerStatusWatcher.WATCHER_ID, DummyWatcher.WATCHER_ID];
   ids.forEach(function (watcherId) {
     const cursor = state.getCursor(watcherId);
     Log.info('watcher_state', {
@@ -41,6 +42,7 @@ function showState(watcherIds) {
       bootstrapped: cursor ? cursor.bootstrapped : false,
       consecutive_failures: state.getFailureCount(watcherId),
       snapshot_rows: state.snapshots(watcherId).count(),
+      raw_value_rows: state.rawValues(watcherId).count(),
     });
   });
   Log.info('sheet_rows', {
@@ -57,7 +59,7 @@ function showState(watcherIds) {
  * カーソルは進んでいないので、再開すれば失敗した範囲から処理し直される。
  */
 function clearWatcherFailures(watcherId) {
-  const id = watcherId || DummyWatcher.WATCHER_ID;
+  const id = watcherId || CareerStatusWatcher.WATCHER_ID;
   State.create().clearFailures(id);
   Log.info('failure_counter_cleared', { watcher_id: id });
 }

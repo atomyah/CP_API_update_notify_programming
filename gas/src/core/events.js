@@ -4,7 +4,9 @@
  * **Runner はこの戻り値だけを見てカーソルを進めるかどうかを決める**（仕様書 11.4）。
  * ウォッチャー自身にカーソルを書かせない。コミット点を1箇所に閉じるため。
  *
- * 通知の中間表現（`Notification`）は通知を実装する Phase3 で足す。
+ * 通知の中間表現（`Notification`）もここに置く。**ウォッチャーが組み立て、
+ * notifiers/ が送る。**notifiers/ は CP のリソースも項目 ID も知らない
+ * （rules/50-code-style.md）。
  */
 const Events = (function () {
 
@@ -55,6 +57,34 @@ const Events = (function () {
     return result({ ok: true, skipped: reason });
   }
 
+  /**
+   * 通知の中間表現。
+   *
+   * @param fields
+   *   watcherId / resourceId / eventType / digest  冪等キーの4つ組（rules/30）
+   *   channelKey  論理的な宛先。**Webhook URL ではない**（notifiers が解決する）
+   *   subject     件名。Slack では本文に含めないが、メール（要件4）で使う
+   *   body        送信する本文。**組み立て済みで渡す。**再取得しない（rules/20）
+   *   meta        ログ用の補助情報。個人情報を入れないこと
+   */
+  function notification(fields) {
+    const f = fields || {};
+    if (!f.watcherId || !f.resourceId || !f.eventType || !f.digest) {
+      throw Errors.config('notification needs watcherId/resourceId/eventType/digest');
+    }
+    if (!f.channelKey) throw Errors.config('notification needs channelKey');
+    return {
+      watcherId: f.watcherId,
+      resourceId: String(f.resourceId),
+      eventType: f.eventType,
+      digest: f.digest,
+      channelKey: f.channelKey,
+      subject: f.subject || '',
+      body: f.body || '',
+      meta: f.meta || {},
+    };
+  }
+
   /** 「何件取得して何件通知したか」を1行で出すためのログ項目（rules/50-code-style.md）。 */
   function logFields(r) {
     return {
@@ -71,6 +101,7 @@ const Events = (function () {
 
   return {
     result: result,
+    notification: notification,
     exhausted: exhausted,
     failed: failed,
     skipped: skipped,

@@ -394,13 +394,14 @@ function runStateTests() {
   return T.run('state');
 }
 
-/** Phase1 と Phase2 のテストをまとめて走らせる。 */
+/** Phase1〜Phase3 のテストをまとめて走らせる。 */
 function runAllTests() {
   const core = runCoreTests();
   const state = runStateTests();
+  const watchers = runWatcherTests();
   const summary = {
-    total: core.total + state.total,
-    failed: core.failed + state.failed,
+    total: core.total + state.total + watchers.total,
+    failed: core.failed + state.failed + watchers.failed,
   };
   Log.info('all_tests_passed', summary);
   return summary;

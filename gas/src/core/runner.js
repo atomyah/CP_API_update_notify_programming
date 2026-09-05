@@ -33,8 +33,10 @@ const Runner = (function () {
    * ウォッチャーを1サイクルだけ実行する。**例外を投げない。**
    *
    * @param watcher  Watchers.define() で作ったもの
-   * @param options  { state, lock, props, sheets, bootstrap, maxRuntimeSeconds }
-   *                 state / lock / props / sheets はテストのために差し替えられる
+   * @param options  { state, lock, props, sheets, dispatcher, bootstrap, dryRun,
+   *                   maxRuntimeSeconds }
+   *                 state / lock / props / sheets / dispatcher はテストのために差し替えられる。
+   *                 dryRun を立てると全通知がドライラン用チャンネルへ寄る（rules/40）
    * @return CycleResult
    */
   function execute(watcher, options) {
@@ -69,10 +71,17 @@ const Runner = (function () {
         watcherId: watcherId,
         state: state,
         snapshots: state.snapshots(watcherId),
+        // 遷移前後を通知する項目の生値。書き戻しは snapshots と同じコミット点
+        rawValues: state.rawValues(watcherId),
         cursor: state.getCursor(watcherId),
         budget: budget,
         bootstrap: !!opts.bootstrap,
         config: watcher.config || {},
+        schema: Schema,
+        master: Master,
+        templates: Templates,
+        dispatcher: opts.dispatcher ||
+          Dispatcher.create({ state: state, dryRun: !!opts.dryRun }),
         // サイクルの開始時刻。カーソルにはこれを入れる（終了時刻を入れると、
         // 走査中に変更されたレコードが次サイクルの検索から漏れる）
         startedAt: TimeFmt.now(),

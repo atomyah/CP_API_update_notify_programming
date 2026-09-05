@@ -15,6 +15,7 @@ const Sheets = (function () {
 
   const NAMES = {
     SNAPSHOTS: 'snapshots',
+    SNAPSHOT_VALUES: 'snapshot_values',
     NOTIFIED: 'notified',
     DEAD_LETTER: 'dead_letter',
   };
@@ -27,9 +28,15 @@ const Sheets = (function () {
    *
    * `watcher_id` 列は SQLite の主キー `(watcher_id, resource_id, item_id)` に由来する。
    * ウォッチャー間で状態を共有しないという不変条件（rules/30）をシートでも保つために要る。
+   *
+   * `snapshot_values` は `snapshots` と同じレイアウトで、**遷移前後を通知したい項目の
+   * 生値だけ**を持つ（SQLite の `snapshots.value_raw` に相当。仕様書 11.3）。
+   * ⚠️ ここには個人情報が平文で入る。対象項目は設定で明示したものだけに限る
+   * （rules/40-secrets-and-security.md / core/config.js の rawValueItems）。
    */
   const HEADERS = {};
   HEADERS[NAMES.SNAPSHOTS] = ['watcher_id', 'resource_id'];
+  HEADERS[NAMES.SNAPSHOT_VALUES] = ['watcher_id', 'resource_id'];
   HEADERS[NAMES.NOTIFIED] = ['watcher_id', 'resource_id', 'event_type', 'payload_hash', 'notified_at'];
   HEADERS[NAMES.DEAD_LETTER] = ['created_at', 'watcher_id', 'payload', 'error'];
 

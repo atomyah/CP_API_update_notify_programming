@@ -8,6 +8,7 @@
  * |---|---|
  * | `cursors` | PropertiesService（1ウォッチャー = 1プロパティ。**これがコミット点**） |
  * | `snapshots` | シート。1リソース = 1行、監視項目 = 列（仕様書 11.3） |
+ * | `snapshots.value_raw` | 別シート `snapshot_values`。**対象項目を限定する**（仕様書 11.3） |
  * | `notified` | シート。**UNIQUE 制約が無いのでアプリ側で担保する**（仕様書 11.5） |
  * | `dead_letter` | シート |
  *
@@ -115,21 +116,29 @@ const State = (function () {
    *
    * シートには全ウォッチャーの行が混在する。自分の watcher_id の行だけを索引に載せ、
    * 他ウォッチャーの行はそのまま持ち回って書き戻す（勝手に消さない）。
+   *
+   * 同じレイアウトを2枚のシートに使う（仕様書 11.3）:
+   *
+   * | シート | 中身 |
+   * |---|---|
+   * | `snapshots` | 全監視項目の**ハッシュ**。差分検知はこれだけで足りる |
+   * | `snapshot_values` | 遷移前後を通知したい項目の**生値**。設定で明示した項目のみ |
    */
   class SnapshotSet {
-    constructor(sheets, watcherId) {
+    constructor(sheets, watcherId, sheetName) {
       this._sheets = sheets;
       this._watcherId = watcherId;
+      this._sheetName = sheetName || Sheets.NAMES.SNAPSHOTS;
       this._loaded = false;
       this._dirty = false;
     }
 
     _load() {
       if (this._loaded) return;
-      const values = this._sheets.readAll(Sheets.NAMES.SNAPSHOTS);
+      const values = this._sheets.readAll(this._sheetName);
       this._header = (values[0] || []).map(String);
       if (this._header.length < 2) {
-        this._header = Sheets.HEADERS[Sheets.NAMES.SNAPSHOTS].slice();
+        this._header = Sheets.HEADERS[this._sheetName].slice();
       }
       this._colIndex = {};
       const self = this;
@@ -152,8 +161,8 @@ const State = (function () {
       return Object.prototype.hasOwnProperty.call(this._index, String(resourceId));
     }
 
-    /** 前回値のハッシュ。**記録がなければ null。** */
-    hashOf(resourceId, itemId) {
+    /** セルの中身。**記録がなければ null。**空欄と「記録なし」は区別しない。 */
+    getCell(resourceId, itemId) {
       this._load();
       const row = this._index[String(resourceId)];
       if (!row) return null;
@@ -161,6 +170,20 @@ const State = (function () {
       if (col === undefined) return null;
       const cell = row[col];
       return (cell === '' || cell === null || cell === undefined) ? null : String(cell);
+    }
+
+    /** セルを書く。**シートにはまだ書かない**（flush() まで溜める）。 */
+    setCell(resourceId, itemId, text) {
+      this._load();
+      const col = this._ensureColumn(itemId);
+      const row = this._ensureRow(String(resourceId));
+      if (String(row[col]) !== text) this._dirty = true;
+      row[col] = text;
+    }
+
+    /** 前回値のハッシュ。**記録がなければ null。** */
+    hashOf(resourceId, itemId) {
+      return this.getCell(resourceId, itemId);
     }
 
     /**
@@ -179,11 +202,33 @@ const State = (function () {
     }
 
     putHash(resourceId, itemId, hash) {
-      this._load();
-      const col = this._ensureColumn(itemId);
-      const row = this._ensureRow(String(resourceId));
-      if (String(row[col]) !== hash) this._dirty = true;
-      row[col] = hash;
+      this.setCell(resourceId, itemId, hash);
+    }
+
+    /**
+     * 生値を保存する（`snapshot_values` シート用）。
+     *
+     * **JSON で持つ。**型を保ったまま復元できないと「遷移前 → 遷移後」の表示が壊れる。
+     * null も `"null"` という4文字になるので、空欄（＝記録なし）と区別がつく。
+     */
+    putRaw(resourceId, itemId, value) {
+      this.setCell(resourceId, itemId, JSON.stringify(
+        value === undefined ? null : value));
+    }
+
+    /**
+     * 保存した生値を元の型で取り出す。
+     * @return `{ hasRaw: false, value: null }` なら記録なし（通知では「(記録なし)」）
+     */
+    rawOf(resourceId, itemId) {
+      const cell = this.getCell(resourceId, itemId);
+      if (cell === null) return { hasRaw: false, value: null };
+      try {
+        return { hasRaw: true, value: JSON.parse(cell) };
+      } catch (e) {
+        // 手でシートを編集した等。落とさずそのまま文字列として見せる
+        return { hasRaw: true, value: cell };
+      }
     }
 
     /** 監視対象から外れたリソースを落とす（rules/30 のスナップショットの寿命）。 */
@@ -219,7 +264,7 @@ const State = (function () {
         while (out.length < width) out.push('');
         return out;
       });
-      this._sheets.writeAll(Sheets.NAMES.SNAPSHOTS, [this._header.slice()].concat(rows));
+      this._sheets.writeAll(this._sheetName, [this._header.slice()].concat(rows));
       this._dirty = false;
       return true;
     }
@@ -420,20 +465,33 @@ const State = (function () {
 
     // --- snapshots ---------------------------------------------------------
 
-    /** ウォッチャーごとのスナップショット。1サイクル中は同じインスタンスを返す。 */
+    /** ウォッチャーごとのスナップショット（ハッシュ）。1サイクル中は同じインスタンスを返す。 */
     snapshots(watcherId) {
-      if (!this._snapshots[watcherId]) {
-        this._snapshots[watcherId] = new SnapshotSet(this._sheets, watcherId);
+      return this._set(watcherId, Sheets.NAMES.SNAPSHOTS);
+    }
+
+    /**
+     * 遷移前後を通知するための生値。**対象項目を限定して使うこと**
+     * （rules/40-secrets-and-security.md）。書き戻しは snapshots と同じコミット点。
+     */
+    rawValues(watcherId) {
+      return this._set(watcherId, Sheets.NAMES.SNAPSHOT_VALUES);
+    }
+
+    _set(watcherId, sheetName) {
+      const key = sheetName + '|' + watcherId;
+      if (!this._snapshots[key]) {
+        this._snapshots[key] = new SnapshotSet(this._sheets, watcherId, sheetName);
       }
-      return this._snapshots[watcherId];
+      return this._snapshots[key];
     }
 
     /** Runner が「コミットしてよい」と判断したときだけ呼ぶ。 */
     flushSnapshots() {
       const self = this;
       let flushed = 0;
-      Object.keys(this._snapshots).forEach(function (watcherId) {
-        if (self._snapshots[watcherId].flush()) flushed += 1;
+      Object.keys(this._snapshots).forEach(function (key) {
+        if (self._snapshots[key].flush()) flushed += 1;
       });
       return flushed;
     }
