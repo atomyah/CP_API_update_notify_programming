@@ -247,7 +247,8 @@ function runStateTests() {
       },
     });
     // maxRuntimeSeconds=0 なので最初の consume で時間切れになる
-    const options = { state: env.state, lock: env.lock, maxRuntimeSeconds: 0 };
+    const options = { state: env.state, lock: env.lock,
+      dispatcher: env.dispatcher, maxRuntimeSeconds: 0 };
     const result = Runner.execute(watcher, options);
 
     T.assertEquals(result.exhausted, true);
@@ -394,15 +395,16 @@ function runStateTests() {
   return T.run('state');
 }
 
-/** Phase1〜Phase4 のテストをまとめて走らせる。 */
+/** Phase1〜Phase5 のテストをまとめて走らせる。 */
 function runAllTests() {
   const core = runCoreTests();
   const state = runStateTests();
   const watchers = runWatcherTests();
   const progressFlow = runProgressFlowTests();
+  const ops = runOpsTests();
   const summary = {
-    total: core.total + state.total + watchers.total + progressFlow.total,
-    failed: core.failed + state.failed + watchers.failed + progressFlow.failed,
+    total: core.total + state.total + watchers.total + progressFlow.total + ops.total,
+    failed: core.failed + state.failed + watchers.failed + progressFlow.failed + ops.failed,
   };
   Log.info('all_tests_passed', summary);
   return summary;
@@ -417,19 +419,29 @@ function newState(options) {
   });
 }
 
-/** Runner のテスト用の一式（プロパティ・シート・ロック・State）。 */
+/**
+ * Runner のテスト用の一式（プロパティ・シート・ロック・State・通知先）。
+ *
+ * ⚠️ **必ず通知先を差し替えておく。**Runner は自動停止のときに ops チャンネルへ
+ * 警告を送る（Phase5）。差し替えを忘れると、**GAS でテストを走らせたときに
+ * 本物の Slack へ届く。**
+ */
 function newEnv(options) {
   const opts = options || {};
   const props = opts.props || T.fakeProperties();
   const sheets = opts.sheets || T.fakeSheets();
   const state = State.create({ props: props, sheets: sheets });
   const lock = T.fakeLock(opts.lockAcquired !== false);
+  const notifier = opts.notifier || recordingNotifier(['ops']);
+  const dispatcher = Dispatcher.create({ state: state, notifiers: [notifier] });
   return {
     props: props,
     sheets: sheets,
     state: state,
     lock: lock,
-    options: { state: state, lock: lock },
+    notifier: notifier,
+    dispatcher: dispatcher,
+    options: { state: state, lock: lock, dispatcher: dispatcher },
   };
 }
 

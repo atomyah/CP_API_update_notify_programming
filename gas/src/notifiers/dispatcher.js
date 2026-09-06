@@ -10,8 +10,11 @@
  * **1件ずつ即座に送る（ストリーミング）。**まとめてから送ると、途中で予算切れに
  * なったときに組み立て済みの通知が送信前に捨てられる。
  *
- * Phase3 では 1サイクルの通知件数上限とサマリへの切り替え（仕様書 8.1 / Python 版の
- * max_notifications_per_cycle）は入れていない。**Phase5 で足す。**
+ * **1サイクルの通知件数に上限がある**（`Config.limits.maxNotificationsPerCycle`）。
+ * 超えたぶんは送らずに溜め、`endCycle()` で1通のサマリに畳む（Phase5）。
+ * データ移行や一括更新で変化件数が跳ねたときにチャンネルが埋まるのを防ぐ。
+ * ⚠️ **溜めたぶんは冪等キーを予約しない。**予約してしまうと「送っていないのに
+ * 送信済み」になり、次サイクルでも二度と出なくなる（＝通知漏れ）。
  */
 const Dispatcher = (function () {
 
@@ -23,7 +26,9 @@ const Dispatcher = (function () {
       const opts = options || {};
       this._state = opts.state;
       this._notifiers = opts.notifiers || [];
+      this._maxPerCycle = opts.maxPerCycle || Config.limits.maxNotificationsPerCycle;
       this._sent = 0;
+      this._suppressed = [];
       if (!this._state) throw Errors.config('dispatcher needs a state store');
     }
 
@@ -34,10 +39,41 @@ const Dispatcher = (function () {
 
     beginCycle() {
       this._sent = 0;
+      this._suppressed = [];
     }
 
-    /** 1件送る。送れたら true。**例外は投げない**（dead_letter に落とす）。 */
+    /**
+     * 1件送る。送れたら true。**例外は投げない**（dead_letter に落とす）。
+     *
+     * 1サイクルの上限を超えたぶんは送らずに溜め、`endCycle()` でサマリに畳む。
+     */
     dispatchOne(notification) {
+      if (this._sent >= this._maxPerCycle) {
+        this._suppressed.push(notification);
+        return false;
+      }
+      if (!this._sendOne(notification)) return false;
+      this._sent += 1;
+      return true;
+    }
+
+    /** サイクルを閉じ、送信できた件数を返す。溜めたぶんは1通のサマリにする。 */
+    endCycle() {
+      if (this._suppressed.length) {
+        const suppressed = this._suppressed;
+        this._suppressed = [];
+        Log.warn('notification_flood', {
+          watcher_id: suppressed[0].watcherId,
+          suppressed: suppressed.length,
+          limit: this._maxPerCycle,
+        });
+        if (this._sendOne(this._summary(suppressed))) this._sent += 1;
+      }
+      return this._sent;
+    }
+
+    /** 実際に1件送る。冪等キーの予約もここ。 */
+    _sendOne(notification) {
       // 先に予約する。競合したら既送信なので黙って捨てる
       if (!this._state.claimNotification(
             notification.watcherId, notification.resourceId,
@@ -59,7 +95,6 @@ const Dispatcher = (function () {
 
       try {
         notifier.send(notification);
-        this._sent += 1;
         return true;
       } catch (e) {
         if (!Errors.is(e, Errors.KIND.NOTIFY)) throw e;
@@ -68,9 +103,34 @@ const Dispatcher = (function () {
       }
     }
 
-    /** サイクルを閉じ、送信できた件数を返す。 */
-    endCycle() {
-      return this._sent;
+    /**
+     * 上限を超えたぶんを1通に畳む。
+     *
+     * 冪等キーはサイクルごとに一意にする（時刻を含める）。
+     * 過去のサマリと衝突すると、次の一括更新のサマリが消える。
+     */
+    _summary(suppressed) {
+      const first = suppressed[0];
+      const total = this._sent + suppressed.length;
+      const resources = {};
+      suppressed.forEach(function (n) { resources[n.resourceId] = true; });
+      const template = Templates.get('notification_flood');
+      const fields = {
+        total: total,
+        suppressed: suppressed.length,
+        limit: this._maxPerCycle,
+        resources: Object.keys(resources).length,
+      };
+      return Events.notification({
+        watcherId: first.watcherId,
+        resourceId: '__summary__',
+        eventType: 'summary',
+        digest: State.payloadHash([TimeFmt.nowStore(), total]),
+        channelKey: first.channelKey,
+        subject: Templates.renderField(template, 'subject', fields, ''),
+        body: Templates.renderField(template, 'body', fields),
+        meta: { suppressed: suppressed.length },
+      });
     }
 
     _pick(channelKey) {
@@ -103,7 +163,7 @@ const Dispatcher = (function () {
 
   /**
    * 既定の一式（Slack のみ）。
-   * @param options { state, dryRun, notifiers }
+   * @param options { state, dryRun, notifiers, maxPerCycle }
    *   dryRun が true なら全通知をドライラン用チャンネルへ寄せる
    */
   function create(options) {
@@ -111,7 +171,9 @@ const Dispatcher = (function () {
     const notifiers = opts.notifiers || [SlackNotifier.create({
       dryRunChannelKey: opts.dryRun ? Config.slack.dryRunChannelKey : null,
     })];
-    return new NotificationDispatcher({ state: opts.state, notifiers: notifiers });
+    return new NotificationDispatcher({
+      state: opts.state, notifiers: notifiers, maxPerCycle: opts.maxPerCycle,
+    });
   }
 
   return { NotificationDispatcher: NotificationDispatcher, create: create };

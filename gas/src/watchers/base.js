@@ -23,6 +23,7 @@
  * | `resolver` | ID → 表示名（core/resolver.js）。求職者名・求人名・企業名 |
  * | `templates` | 通知本文のテンプレート（templates.js） |
  * | `dispatcher` | 通知の送出口。**冪等除去と dead_letter はこの中**（notifiers/） |
+ * | `metrics` | 日次メトリクス（core/metrics.js）。`count(name)` で日次サマリに件数を出せる |
  * | `startedAt` | サイクルの開始時刻。カーソルにはこれを入れる |
  *
  * CP API は `CpClient` を直接呼ぶ（唯一の HTTP 出口。rules/20-rate-limit.md）。

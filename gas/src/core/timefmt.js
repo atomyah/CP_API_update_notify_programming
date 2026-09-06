@@ -88,6 +88,16 @@ const TimeFmt = (function () {
     return toStore(now());
   }
 
+  /** 保存形式の日付だけ（`yyyy-MM-dd`）。日次メトリクスのキーに使う。 */
+  function toStoreDate(date) {
+    return Utilities.formatDate(date, TZ, STORE_DATE_FMT);
+  }
+
+  /** 今日の日付（JST）。 */
+  function today() {
+    return toStoreDate(now());
+  }
+
   /** 秒を足し引きした Date を返す（オーバーラップ幅の適用に使う）。 */
   function shiftSeconds(date, seconds) {
     return new Date(date.getTime() + seconds * 1000);
@@ -112,6 +122,8 @@ const TimeFmt = (function () {
     toStore: toStore,
     fromStore: fromStore,
     nowStore: nowStore,
+    toStoreDate: toStoreDate,
+    today: today,
     shiftSeconds: shiftSeconds,
     shiftDays: shiftDays,
   };

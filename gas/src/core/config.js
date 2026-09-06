@@ -57,8 +57,46 @@ const Config = {
     // ドライランのときに全通知を寄せるチャンネル。
     // 本番相当のデータで動かす前の確認用（rules/40-secrets-and-security.md）
     dryRunChannelKey: 'ops',
+    // 運用通知（自動停止の警告・日次サマリ）の宛先。**業務通知とは分ける**
+    opsChannelKey: 'ops',
     sendRetryMax: 3,
     backoffBaseSeconds: 2,
+  },
+
+  /**
+   * 時間主導トリガー（`setup.js` の `createTriggers()`）。
+   *
+   * **⚠️ `everyMinutes` に指定できるのは 1 / 5 / 10 / 15 / 30 だけ**（GAS の制約）。
+   * それ以外を書くと作成時に落ちる。
+   *
+   * **⚠️ トリガーを手で足さない。**`createTriggers()` は自分が作ったものを
+   * 消してから作り直すので冪等だが、画面から足したものは管理外になり、
+   * 同じ関数が二重に回って流量が倍になる（rules/20-rate-limit.md）。
+   */
+  triggers: [
+    { handler: 'runProgressFlow', everyMinutes: 5, enabled: true, note: '要件2/3。許容遅延5分' },
+    { handler: 'runCareerStatus', everyMinutes: 15, enabled: true, note: '要件1。許容遅延15分' },
+    // 要件4は Phase6。**関数が存在しないので enabled: false のままにする**
+    { handler: 'runCareerAction', everyMinutes: 15, enabled: false, note: '要件4（Phase6 完了後に true）' },
+    { handler: 'runDailySummary', atHour: 7, enabled: true, note: '日次サマリ（前日ぶんを ops へ）' },
+  ],
+
+  /**
+   * 監視（仕様書 8.6節）。**設計との乖離を検出するための閾値。**
+   *
+   * GAS は常時トリガーが回るので、Python 版で問題だった「断続起動」の制約
+   * （仕様書 9.5節）は原則として起きない。**ただしトリガーが止まることはある**
+   * （日次実行時間の上限・例外の連続・手で消した等）ので、
+   * **止まったことに気づく仕組みは残す。**それが `cursorLagWarnMinutes`。
+   */
+  monitoring: {
+    // 想定流量（仕様書 8.1節）。日次サマリでこれと実測を突き合わせる
+    dailyRequestBudget: 5000,
+    // 「現在時刻 − カーソル値」がこれを超えたら止まっていると見なす。
+    // **単調増加していたら最も危険なシグナル**（仕様書 8.6節）
+    cursorLagWarnMinutes: 60,
+    // メトリクスを何日ぶん残すか。PropertiesService に1日1キーで置く
+    metricsKeepDays: 7,
   },
 
   // 要件1の監視設定。Python 版 config/watchers.yaml の career_status に対応する。

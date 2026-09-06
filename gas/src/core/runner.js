@@ -5,13 +5,16 @@
  * **GAS にメインループは無い。**時間主導トリガーが1ウォッチャーぶんの1サイクルを呼ぶ
  * （仕様書 11.6）。トリガーの登録は Phase5。
  *
- * ここが持つ責務は4つ:
+ * ここが持つ責務は5つ:
  *
  * 1. **排他** — LockService。取れなければ即座に抜ける（待たない）。
  * 2. **予算** — 件数と経過時間の両方で打ち切る（6分制限）。
  * 3. **コミット点** — カーソルの書き込みを1サイクル最後の単一操作にする（仕様書 11.4）。
- * 4. **連続失敗カウンタ** — 閾値を超えたら自動停止する。
+ * 4. **連続失敗カウンタ** — 閾値を超えたら自動停止し、**ops チャンネルへ1回だけ警告する。**
  *    壊れたまま回り続けて API 予算を食い潰す方が有害（rules/30）。
+ *    GAS はトリガーが黙って止まるので、ログだけでは誰も気づかない（Phase5）。
+ * 5. **メトリクス** — 実行をまたぐ集計を残す（core/metrics.js・仕様書 8.6）。
+ *    **ここでの失敗はサイクルを落とさない。**
  *
  * ```
  * 差分判定 → notified 追記 → 通知 → snapshots 書き戻し → カーソルを1回書く
@@ -53,6 +56,10 @@ const Runner = (function () {
     }
 
     const startedMs = Date.now();
+    const dispatcher = opts.dispatcher ||
+      Dispatcher.create({ state: state, dryRun: !!opts.dryRun });
+    const metrics = opts.metrics || Metrics.create({ props: state.properties() });
+
     try {
       const failures = state.getFailureCount(watcherId);
       if (failures >= MAX_CONSECUTIVE_FAILURES) {
@@ -61,7 +68,12 @@ const Runner = (function () {
           consecutive_failures: failures,
           hint: 'fix the cause, then clear the failure counter; the cursor was not advanced',
         });
-        return Events.skipped('auto_stopped');
+        // ⚠️ ここでは ops へ送らない。停止中は5分ごとにこの経路を通るため、
+        // 送ると同じ警告が鳴り続ける。**警告は停止した瞬間に1回だけ**（commit）。
+        // 止まったままであることは日次サマリが報告する（notifiers/ops.js）
+        const skipped = Events.skipped('auto_stopped');
+        metrics.recordCycle(watcherId, skipped, CpClient.metrics());
+        return skipped;
       }
 
       const budget = new Budget.RequestBudget(
@@ -82,15 +94,19 @@ const Runner = (function () {
         // ID → 表示名。**キャッシュは1回の実行の中だけ**（core/resolver.js）
         resolver: opts.resolver || Resolver,
         templates: Templates,
-        dispatcher: opts.dispatcher ||
-          Dispatcher.create({ state: state, dryRun: !!opts.dryRun }),
+        dispatcher: dispatcher,
+        // 日次サマリ用の汎用カウンタ（宛先未設定の件数など）を足せるようにする
+        metrics: metrics,
         // サイクルの開始時刻。カーソルにはこれを入れる（終了時刻を入れると、
         // 走査中に変更されたレコードが次サイクルの検索から漏れる）
         startedAt: TimeFmt.now(),
       };
 
       const result = Watchers.run(watcher, ctx);
-      commit(state, watcherId, result);
+      commit(state, watcherId, result, dispatcher);
+
+      // 実行をまたぐ集計。**ここで失敗してもサイクルは落とさない**（core/metrics.js）
+      metrics.recordCycle(watcherId, result, CpClient.metrics());
 
       // 「何件取得して何件通知したか」を1行で出す（rules/50-code-style.md）
       const fields = Events.logFields(result);
@@ -104,13 +120,27 @@ const Runner = (function () {
   }
 
   /**
+   * 自動停止を ops チャンネルへ知らせる。**通知の失敗でサイクルを落とさない。**
+   * Slack が死んでいるときに、そのせいで業務側の処理まで止まるのは筋が悪い。
+   */
+  function alertStopped(dispatcher, watcherId, failures, stopCount) {
+    try {
+      Ops.watcherStopped(dispatcher, watcherId, failures, stopCount);
+    } catch (e) {
+      Log.error('ops_alert_failed', {
+        watcher_id: watcherId, error: e.name + ': ' + e.message,
+      });
+    }
+  }
+
+  /**
    * コミット。**ここだけがカーソルを書く。**
    *
    * - 失敗 → 何も書かない。失敗カウンタだけ進める
    * - 予算切れ・時間切れ → **カーソルも snapshots も書かない。**次サイクルで再処理する
    * - 成功 → snapshots を書き戻し、最後にカーソルを1回書く
    */
-  function commit(state, watcherId, result) {
+  function commit(state, watcherId, result, dispatcher) {
     if (result.skipped) return;
 
     if (!result.ok) {
@@ -128,6 +158,10 @@ const Runner = (function () {
           consecutive_failures: failures,
           hint: 'fix the cause, then clear the failure counter',
         });
+        // **止まったことに人が気づけるようにする**（仕様書 8.6節）。
+        // GAS はトリガーが黙って止まるので、ログだけでは誰も見ない。
+        // **ここが「停止した瞬間」。**以降のトリガーは実行ごと飛ぶので鳴らない
+        alertStopped(dispatcher, watcherId, failures, state.recordStop(watcherId));
       }
       return;
     }

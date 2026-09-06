@@ -45,12 +45,50 @@ Phase3・Phase4 は手動実行で確認していた。**トリガーで自動�
 
 ## 完了条件
 
-- [ ] `createTriggers()` を2回実行してもトリガーが重複しない
-- [ ] 1時間放置して、要件1・要件2/3 が自動で回り、通知が届く
-- [ ] 実リクエスト数が **60 req/分 を超えない**（メトリクスで確認）
-- [ ] 連続失敗5回でウォッチャーが自動停止し、ops チャンネルへ警告が出る
-- [ ] 日次サマリが ops チャンネルへ届く
-- [ ] 通知が大量に出るとき、サマリ通知に切り替わる（`max_notifications_per_cycle: 50`）
+**✅ 実装・実環境確認とも完了（2026-09-06）。**
+設計判断は仕様書 11.12節、確認結果は 11.13節。
+
+- [x] `createTriggers()` を2回実行してもトリガーが重複しない（単体テスト）
+- [x] 連続失敗5回で自動停止し、ops チャンネルへ**1回だけ**警告が出る（単体テスト）
+      → 停止中に鳴り続けないこと、復旧後に再び停止したら再度鳴ることも固定した
+- [x] 通知が大量に出るとき、サマリ通知に切り替わる（`maxNotificationsPerCycle: 50`）
+      → **省略したぶんを既送信にしない**（通知漏れになる）ことも固定した
+- [x] 日次サマリの材料（実行回数・検知/通知件数・リクエスト数・カーソルの遅れ・
+      自動停止・dead_letter・汎用カウンタ）が揃う（単体テスト）
+- [x] 単体テスト 28 件（`node tools/gas_test/run_tests.js` で合計 148 件）
+- [x] `createTriggers()` を実行し、1時間放置して要件1・要件2/3 が自動で回った
+- [x] 実リクエスト数が **60 req/分 を超えない**
+- [x] トリガーを2本動かした状態で同時に走らない（`LockService`）← Phase4 からの持ち越しを解消
+- [x] 日次サマリが ops チャンネルへ届く
+
+### 実環境確認の手順
+
+```
+1. clasp push
+2. showTriggers()            今あるトリガーを確認（初回は空）
+3. createTriggers()          3本作られる（要件4は enabled: false なので作られない）
+4. showTriggers()            重複が無いこと。もう一度 createTriggers() しても増えないこと
+   ここで1時間ほど放置する
+5. runDailySummaryToday()    ops チャンネルへ届くこと。ピーク req/分 と実行回数を確認
+6. showState()               カーソルが進んでいること
+```
+
+**⚠️ 止めたいときは `deleteTriggers()`。**画面から消すと管理外の状態が残る。
+
+`runDailySummary()`（トリガーが呼ぶ方）は**前日ぶん**を集計する。
+朝に走るので当日を集計してもほとんど空になるため。手で今日ぶんを見るときは
+`runDailySummaryToday()`。
+
+## 作ったもの（実装後の実際）
+
+| ファイル | 責務 |
+|---|---|
+| `gas/src/core/metrics.js` | 日次メトリクス（PropertiesService に1日1キー）と日次サマリの材料集め |
+| `gas/src/notifiers/ops.js` | 運用通知（自動停止の警告・日次サマリ）。文言は templates.js |
+| `gas/src/setup.js` | `createTriggers()` / `deleteTriggers()` / `showTriggers()` |
+| `gas/src/triggers.js` | `runDailySummary()` / `runDailySummaryToday()` |
+| `gas/src/notifiers/dispatcher.js` | 1サイクルの通知上限とサマリへの切り替え |
+| `gas/src/core/runner.js` | メトリクスの記録と、自動停止時の ops 通知 |
 
 ## Python 版との違い（記録しておく）
 

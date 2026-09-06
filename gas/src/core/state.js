@@ -22,6 +22,8 @@ const State = (function () {
 
   const CURSOR_PREFIX = 'cursor:';
   const FAILURES_PREFIX = 'failures:';
+  // 自動停止した通算回数。停止1回を一意に識別するために使う（notifiers/ops.js）
+  const STOPS_PREFIX = 'stops:';
 
   // 冪等キーの連結に使う区切り。値に現れない制御文字を使う
   const KEY_SEP = '\u001f';
@@ -377,6 +379,19 @@ const State = (function () {
       this._notified = null;
     }
 
+    /**
+     * 同じプロパティストアを使う仕組み（core/metrics.js）に渡すため。
+     * **テストが本番のプロパティを触らないよう、必ずここ経由で受け渡す。**
+     */
+    properties() {
+      return this._props;
+    }
+
+    /** シートのデータ行数（見出しを除く）。日次サマリが dead_letter を数えるのに使う。 */
+    sheetRowCount(sheetName) {
+      return this._sheets.dataRowCount(sheetName);
+    }
+
     // --- cursors（PropertiesService） -------------------------------------
 
     /** @return null | { watcherId, value: Date, pageOffset, bootstrapped, updatedAt: Date } */
@@ -461,6 +476,25 @@ const State = (function () {
 
     clearFailures(watcherId) {
       this._props.deleteProperty(FAILURES_PREFIX + watcherId);
+    }
+
+    /**
+     * 自動停止した回数（通算）を1つ進めて返す。
+     *
+     * **停止1回を一意に識別するためのもの。**ops への警告の冪等キーに入れる。
+     * 内容（ウォッチャー + 失敗回数）だけでキーを作ると、復旧して再び停止したときに
+     * 前回と同じキーになり、2度目の停止が通知されない（notifiers/ops.js）。
+     * **`clearFailures()` では戻さない**（通算の回数なので）。
+     */
+    recordStop(watcherId) {
+      const next = this.getStopCount(watcherId) + 1;
+      this._props.setProperty(STOPS_PREFIX + watcherId, String(next));
+      return next;
+    }
+
+    getStopCount(watcherId) {
+      const raw = this._props.getProperty(STOPS_PREFIX + watcherId);
+      return raw ? (parseInt(raw, 10) || 0) : 0;
     }
 
     // --- snapshots ---------------------------------------------------------

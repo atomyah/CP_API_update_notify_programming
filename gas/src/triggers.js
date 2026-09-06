@@ -1,9 +1,11 @@
 /**
  * 手動実行・トリガーから呼ぶ入口。
  *
- * **時間主導トリガーの本設定は Phase5。**ここにあるのは実行する関数そのもので、
- * Apps Script エディタで選んで実行するか、トリガー画面から
- * `runCareerStatus`（15分）/ `runProgressFlow`（5分）を割り当てる。
+ * ここにあるのは実行する関数そのもの。Apps Script エディタで選んで手動実行するか、
+ * **`createTriggers()`（setup.js）で時間主導トリガーに登録する。**
+ * 構成は `core/config.js` の `triggers`（要件2/3: 5分 / 要件1: 15分 / 日次サマリ）。
+ *
+ * **⚠️ トリガーを画面から手で足さない。**同じ関数が二重に回り、流量が倍になる。
  * **⚠️ エディタでコードを直接編集しない。**clasp push が唯一の反映経路。
  *
  * 実行の順序（初回）:
@@ -19,6 +21,7 @@
  *    runProgressFlowDryRun()
  * 6. runCareerStatus()         1サイクル。本来のチャンネルへ送る
  *    runProgressFlow()
+ * 7. createTriggers()          自動運転を開始する（冪等。何回実行してもよい）
  * ```
  *
  * **4 を飛ばして 5・6 を実行しない。**要件1は前回値が無いと全求職者が「変化した」と
@@ -137,6 +140,82 @@ function checkProgressFlow() {
     templates: Templates,
     dispatcher: Dispatcher.create({ state: state }),
   });
+}
+
+// --- 日次サマリ（仕様書 9.3節）----------------------------------------------
+
+/**
+ * 日次サマリを ops チャンネルへ送る。**CP を1回も叩かない。**
+ *
+ * **既定は「前日」ぶん。**日次トリガーは朝に走るので、当日を集計しても
+ * ほとんど空になる。手で今日ぶんを見たいときは `runDailySummaryToday()`。
+ *
+ * ⚠️ **時間主導トリガーは第1引数にイベントオブジェクトを渡す。**
+ * 日付として使えるのは文字列（`"2026-09-06"`）を明示的に渡したときだけ。
+ *
+ * 出るもの: ウォッチャー別の実行回数・検知件数・通知件数・リクエスト数、
+ * カーソルの遅れ、自動停止、dead_letter の件数、汎用カウンタ
+ * （要件4の「宛先未設定で送れなかった件数」は Phase6 でここに乗る）。
+ */
+function runDailySummary(triggerEventOrDate) {
+  return sendDailySummary(summaryDate(triggerEventOrDate, -1));
+}
+
+/** 今日ぶんの日次サマリ。**動作確認用。**トリガーには登録しない。 */
+function runDailySummaryToday() {
+  return sendDailySummary(TimeFmt.today());
+}
+
+/**
+ * 日次サマリの本体。
+ *
+ * ⚠️ ウォッチャーと同じ `LockService` を取る。`notified` シートへの追記が
+ * サイクルの追記と重なると行が壊れうるため。1日1回の処理なので**待ってよい。**
+ */
+function sendDailySummary(date) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) {
+    Log.warn('lock_busy', { event: 'daily_summary', hint: 'a cycle is still running' });
+    return null;
+  }
+  try {
+    const state = State.create();
+    const report = Metrics.report({
+      state: state,
+      metrics: Metrics.create({ props: state.properties() }),
+      date: date,
+      watchers: activeWatchers(),
+    });
+    Ops.dailySummary(Dispatcher.create({ state: state }), report);
+    Log.info('daily_summary_sent', {
+      date: report.date,
+      requests_total: report.requestsTotal,
+      request_budget: report.requestBudget,
+      peak_rate_per_minute: report.peakRatePerMinute,
+      dead_letter_rows: report.deadLetterRows,
+      has_problem: report.hasProblem,
+    });
+    return report;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * 集計対象の日付。
+ * 文字列（`yyyy-MM-dd`）が渡されればそれ、そうでなければ今日から `offsetDays` 日。
+ */
+function summaryDate(value, offsetDays) {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  return TimeFmt.toStoreDate(TimeFmt.shiftDays(TimeFmt.now(), offsetDays));
+}
+
+/**
+ * 日次サマリに行を出すウォッチャー。**CP は叩かない**（設定を読むだけ）。
+ * 要件4（Phase6）を実装したらここに足す。
+ */
+function activeWatchers() {
+  return [CareerStatusWatcher.create(), ProgressFlowWatcher.create()];
 }
 
 /**

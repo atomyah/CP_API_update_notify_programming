@@ -132,6 +132,47 @@ const T = (function () {
     };
   }
 
+  /**
+   * ScriptApp の代わり（時間主導トリガー）。
+   * **本番のトリガーを触るテストを書かないこと。**登録し直すと流量が変わる。
+   *
+   * 本物と同じくビルダー方式:
+   *   newTrigger(fn).timeBased().everyMinutes(5).create()
+   *   newTrigger(fn).timeBased().everyDays(1).atHour(7).create()
+   */
+  function fakeScriptApp() {
+    const triggers = [];
+    return {
+      newTrigger: function (handler) {
+        const spec = { handler: handler, everyMinutes: null, days: null, atHour: null };
+        const builder = {
+          timeBased: function () { return builder; },
+          everyMinutes: function (n) { spec.everyMinutes = n; return builder; },
+          everyDays: function (n) { spec.days = n; return builder; },
+          atHour: function (h) { spec.atHour = h; return builder; },
+          create: function () {
+            const trigger = {
+              spec: spec,
+              getHandlerFunction: function () { return spec.handler; },
+            };
+            triggers.push(trigger);
+            return trigger;
+          },
+        };
+        return builder;
+      },
+      getProjectTriggers: function () { return triggers.slice(); },
+      deleteTrigger: function (trigger) {
+        const at = triggers.indexOf(trigger);
+        if (at >= 0) triggers.splice(at, 1);
+      },
+      /** テストから読むための補助。本物には無い。 */
+      handlers: function () {
+        return triggers.map(function (t) { return t.getHandlerFunction(); });
+      },
+    };
+  }
+
   /** LockService の代わり。`acquired` が false なら常に取れない。 */
   function fakeLock(acquired) {
     let released = false;
@@ -146,6 +187,6 @@ const T = (function () {
     test: test, assert: assert, assertEquals: assertEquals, assertNear: assertNear,
     assertThrows: assertThrows, run: run, reset: reset,
     fakeProperties: fakeProperties, fakeClock: fakeClock,
-    fakeSheets: fakeSheets, fakeLock: fakeLock,
+    fakeSheets: fakeSheets, fakeLock: fakeLock, fakeScriptApp: fakeScriptApp,
   };
 })();

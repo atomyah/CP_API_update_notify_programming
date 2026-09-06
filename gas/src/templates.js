@@ -24,6 +24,10 @@ const Templates = (function () {
     UNRESOLVED: '(取得できません: {resource} {resource_id})',
     // 一般の遷移ルール名。設定（progressFlow.notify.name）が無いときの既定
     TRANSITION: '進捗フローの進行',
+    // 日次サマリの見出し（notifiers/ops.js）
+    STATUS_OK: '正常',
+    STATUS_PROBLEM: '⚠️ 要確認',
+    NO_PROBLEM: '（なし）',
   };
 
   const TEMPLATES = {
@@ -71,6 +75,62 @@ const Templates = (function () {
         '進捗日: {progress_date}',
         '進捗担当: {progress_charge}',
         '（進捗 {progress_id} / 履歴 {resource_id}）',
+      ].join('\n'),
+    },
+
+    // --- 運用通知（ops チャンネル・notifiers/ops.js）------------------------
+    // **業務の通知ではない。**アプリが壊れたことに人が気づくためのもの。
+
+    // 連続失敗でウォッチャーが自動停止した（仕様書 8.6節 / rules/30）
+    //   変数: watcher_id / failures / stop_count
+    ops_watcher_stopped: {
+      subject: '[CP] ウォッチャーを自動停止しました: {watcher_id}',
+      body: [
+        '*⚠️ ウォッチャーを自動停止しました*',
+        '`{watcher_id}` が {failures} 回連続で失敗しました（通算 {stop_count} 回目の停止）。',
+        '',
+        '*カーソルは進んでいません。*原因を直してから',
+        '`clearWatcherFailures("{watcher_id}")` で再開すると、失敗した範囲から処理し直します。',
+        '止めたままにすると、その間の変化は次の再開時にまとめて通知されます。',
+      ].join('\n'),
+    },
+
+    // 日次サマリ（仕様書 9.3節）。1日1通、ops チャンネルへ
+    //   変数: date / status / watcher_lines / problem_lines / requests_total /
+    //         request_budget / request_ratio / peak_rate / rate_limit /
+    //         dead_letter_rows / notified_rows
+    ops_daily_summary: {
+      subject: '[CP] 日次サマリ {date}（{status}）',
+      watcher_line:
+        '• `{watcher_id}` 実行 {cycles} / 検知 {detected} / 通知 {notified} / ' +
+        'リクエスト {requests}（失敗 {failed} / 中断 {exhausted}）',
+      stopped_line: '• ⚠️ `{watcher_id}` が自動停止しています（連続失敗 {failures} 回）',
+      stale_line: '• ⚠️ `{watcher_id}` のカーソルが {lag_minutes} 分遅れています（{cursor}）',
+      no_baseline_line: '• ⚠️ `{watcher_id}` は基準づくりが済んでいません（通知は出ません）',
+      dead_letter_line: '• ⚠️ dead_letter が {rows} 件あります（自動再送はしません）',
+      counter_line: '• {name}: {count} 件',
+      body: [
+        '*CP進捗通知 日次サマリ*（{date} / {status}）',
+        '',
+        '{watcher_lines}',
+        '',
+        '*要確認*',
+        '{problem_lines}',
+        '',
+        'リクエスト: {requests_total} / {request_budget} 件（{request_ratio}%）',
+        'ピーク: {peak_rate} req/分（設計上限 {rate_limit} req/分）',
+        'dead_letter: {dead_letter_rows} 行 / notified: {notified_rows} 行',
+      ].join('\n'),
+    },
+
+    // 1サイクルの通知件数が上限を超えた（一括更新でチャンネルが溢れるのを防ぐ）
+    //   変数: total / suppressed / limit / resources
+    notification_flood: {
+      subject: '[CP] {total} 件の変更',
+      body: [
+        '*{total} 件の変更が検出されました*',
+        'うち {suppressed} 件は詳細を省略しました（1サイクルの通知上限 {limit} 件）。',
+        '対象リソース: {resources} 件',
       ].join('\n'),
     },
 

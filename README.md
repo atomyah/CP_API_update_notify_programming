@@ -8,8 +8,8 @@ Python 版（`app/`）を Google Apps Script へ移植するための作業単�
 | [Phase1](Phase1.md) | 共通基盤（設定・時刻・流量制御・認可・HTTPクライアント） | なし | ✅ **完了**（2026-09-02。`runCoreTests` 22件通過 / `checkSetup()` を実環境で確認） |
 | [Phase2](Phase2.md) | 状態管理と実行基盤（シート・Properties・ロック・コミット点） | Phase1 | ✅ **完了**（2026-09-04。`runAllTests` 55件通過 / `initSheets()` と `runDummyCycle()` を実環境で確認） |
 | [Phase3](Phase3.md) | 要件1 `career_status` ＋ Slack 通知 | Phase2 | ✅ **完了**（2026-09-05。`runAllTests` 88件通過 / 実環境で通し確認。残1: コード値→ラベルの実機確認） |
-| [Phase4](Phase4.md) | 要件2/3 `progress_flow` | Phase3 | ✅ **完了**（2026-09-06。`runAllTests` 120件通過 / 実環境で通し確認。持ち越した2項目は Phase5 で解消） |
-| [Phase5](Phase5.md) | 運用（トリガー本設定・日次サマリ・通し確認） | Phase4 | ✅ **完了**（2026-09-06。`runAllTests` 148件通過 / 自動運転を実環境で確認。仕様書 11.13節） |
+| [Phase4](Phase4.md) | 要件2/3 `progress_flow` | Phase3 | ✅ **完了**（2026-09-06。`runAllTests` 120件通過 / 実環境で通し確認。残2: トリガー2本の同時稼働と流量の確認 → Phase5） |
+| [Phase5](Phase5.md) | 運用（トリガー本設定・日次サマリ・通し確認） | Phase4 | 🟡 **実装済み・実環境確認待ち**（2026-09-06。`runAllTests` 148件通過。`createTriggers()` と1時間の通し確認が残り） |
 | [Phase6](Phase6.md) | 要件4 `career_action_watch` ＋ メール送信 | Phase2 | ⬜ 条件付き |
 
 ## 進め方の原則

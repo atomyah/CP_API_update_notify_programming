@@ -42,3 +42,8 @@ global.LockService = {
 global.UrlFetchApp = {
   fetch: function () { throw new Error('UrlFetchApp must be stubbed in tests'); },
 };
+// トリガーのテストは T.fakeScriptApp() を渡す。本物を触るテストを書かせない
+global.ScriptApp = {
+  newTrigger: function () { throw new Error('ScriptApp must be stubbed in tests'); },
+  getProjectTriggers: function () { throw new Error('ScriptApp must be stubbed in tests'); },
+};
