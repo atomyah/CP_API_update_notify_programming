@@ -79,6 +79,8 @@ const Runner = (function () {
         config: watcher.config || {},
         schema: Schema,
         master: Master,
+        // ID → 表示名。**キャッシュは1回の実行の中だけ**（core/resolver.js）
+        resolver: opts.resolver || Resolver,
         templates: Templates,
         dispatcher: opts.dispatcher ||
           Dispatcher.create({ state: state, dryRun: !!opts.dryRun }),

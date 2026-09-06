@@ -32,7 +32,8 @@ function initSheets() {
  */
 function showState(watcherIds) {
   const state = State.create();
-  const ids = watcherIds || [CareerStatusWatcher.WATCHER_ID, DummyWatcher.WATCHER_ID];
+  const ids = watcherIds ||
+    [CareerStatusWatcher.WATCHER_ID, ProgressFlowWatcher.WATCHER_ID, DummyWatcher.WATCHER_ID];
   ids.forEach(function (watcherId) {
     const cursor = state.getCursor(watcherId);
     Log.info('watcher_state', {

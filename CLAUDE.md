@@ -75,11 +75,12 @@ Python 版（`app/`）を Google Apps Script へ移植する。**根拠は仕様
 
 **⚠️ `notified` の UNIQUE 制約が失われる**（シートに一意制約はない）。二重通知の防止はアプリ側で持つ。移植で最も事故になりやすい箇所。
 
-**作業フェーズは `to-do/` に分割してある**（Phase1〜6・索引は `to-do/README.md`）。「Phase4 を実装して」で着手できる。
-Phase1〜3 は完了（要件1が GAS 上で動作。仕様書 11.9節）。
+**作業フェーズは `to-do/` に分割してある**（Phase1〜6・索引は `to-do/README.md`）。「Phase5 を実装して」で着手できる。
+**Phase1〜4 は完了。要件1・2・3 が GAS 上で動作している**（仕様書 11.9節 / 11.10節 / 11.11節）。
+Phase5 に持ち越した確認: トリガー2本を同時に動かしたときの `LockService` と合計流量。
 
 ```powershell
-node tools/gas_test/run_tests.js                         # GAS の単体テスト 88件（push 不要）
+node tools/gas_test/run_tests.js                         # GAS の単体テスト 120件（push 不要）
 ```
 
 未確認: GAS の日次クォータ（`UrlFetchApp` 呼び出し数・トリガー合計実行時間）。仕様書 11.7節 / C-15。

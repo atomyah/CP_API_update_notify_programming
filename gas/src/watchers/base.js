@@ -20,6 +20,7 @@
  * | `config` | ウォッチャー個別の設定 |
  * | `schema` | リソース定義（core/schema.js）。項目タイプと参照マスタの解決に使う |
  * | `master` | コード値 → ラベル（core/master.js） |
+ * | `resolver` | ID → 表示名（core/resolver.js）。求職者名・求人名・企業名 |
  * | `templates` | 通知本文のテンプレート（templates.js） |
  * | `dispatcher` | 通知の送出口。**冪等除去と dead_letter はこの中**（notifiers/） |
  * | `startedAt` | サイクルの開始時刻。カーソルにはこれを入れる |

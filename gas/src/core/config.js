@@ -116,4 +116,95 @@ const Config = {
       resourceLabel: '求職者',
     },
   },
+
+  /**
+   * 要件2 + 要件3 の監視設定。Python 版 config/watchers.yaml の progress_flow に対応する。
+   *
+   * 要件3は要件2と**同一のデータソース**（進捗履歴の追加）。実測で
+   * 「進捗ステータス 社内確認中(16) → 応募意思確認中(求人)(11) の遷移」だと確定している。
+   * 別々に API を叩かず、全遷移の上に「特定の遷移だけ文面とチャンネルを変える」形で乗せる。
+   *
+   * ⚠️ 監視する項目 ID は watchers/progressFlow.js の定数にある。
+   *    要件1（career）と違い、**項目は固定で設定から変えない**（Python 版と同じ）。
+   */
+  progressFlow: {
+    enabled: true,
+    intervalMinutes: 5,           // 最大遅延 5分 + 処理時間（仕様書 3.2.8）
+    priority: 1,                  // 要件1（15分間隔）より優先する
+    budgetPerCycle: 60,
+    overlapSeconds: 60,           // datetime は秒精度で検索できる（実測）
+
+    /**
+     * **モードA（全遷移を通知）で開始する**（仕様書 3.2.2）。
+     *
+     * マスタの返却順が業務フロー順ではないことが実測で判明しているため、
+     * フロー定義を推測で埋めず、まず全遷移を流して実データを見てから絞る。
+     * false にするときは watchedStatuses に通知したいステータスを列挙する。
+     * **両方を空にすると何も通知されない**ので起動時に拒否する。
+     */
+    notifyAllTransitions: true,
+    watchedStatuses: [],
+
+    notify: {
+      name: '進捗フローの進行',
+      channelKey: 'progress_flow',
+      template: 'progress_transition',
+    },
+
+    /**
+     * 要件3。**先に書いたルールが勝つ。**当たったものは一般チャンネルには出ない
+     * （1遷移につき通知は1通）。
+     */
+    specialTransitions: [
+      {
+        name: '求人紹介OK',
+        toStatus: '11',           // 応募意思確認中(求人)。実測で確定
+        fromStatus: '16',         // 社内確認中（省略可。指定すると誤検知が減る）
+        // ⚠️ その進捗を初めて観測したときは遷移前のステータスが分からない。
+        //    既定ではそれでも一致とみなす（取りこぼしより重複を選ぶ）。
+        //    true にすると遷移前が確認できたときだけ job_intro へ送る
+        fromStatusRequired: false,
+        notify: {
+          channelKey: 'job_intro',
+          template: 'job_intro_ok',
+        },
+      },
+    ],
+  },
+
+  /**
+   * 通知本文に出す名前の解決（core/resolver.js・仕様書 5.3）。
+   * Python 版 config/app.yaml の name_resolution に対応する。
+   *
+   * progress / progress_history が持っているのは ID だけなので、別リソースを select して
+   * 名前に直す。変化が遅いので TTL 付き LRU でキャッシュする
+   * （**GAS では実効の寿命が1回の実行の中だけになる。**core/resolver.js の注記）。
+   *
+   * ⚠️ ここに担当者メールアドレス（CAREER#CHARGE_EMAIL）を足さないこと。
+   *    要件4の宛先であり、担当者変更の直後に旧担当へ送るのは実害がある（仕様書 5.3）。
+   */
+  nameResolution: {
+    career: {
+      resource: 'career',
+      items: ['CAREER#LASTNAME', 'CAREER#FIRSTNAME'],
+      template: '{CAREER#LASTNAME} {CAREER#FIRSTNAME}',
+      ttlSeconds: 3600,           // 1時間
+      maxEntries: 2000,
+    },
+    order: {
+      resource: 'order',
+      items: ['ORDER#POSITIONNAME'],
+      template: '{ORDER#POSITIONNAME}',
+      ttlSeconds: 21600,          // 6時間
+      maxEntries: 1000,
+    },
+    client: {
+      // 進捗は PROGRESS#CLIENT_ID を直接持っているので、求人を経由せず1リクエストで引ける
+      resource: 'client',
+      items: ['CLIENT#CLIENTNAME'],
+      template: '{CLIENT#CLIENTNAME}',
+      ttlSeconds: 21600,          // 6時間
+      maxEntries: 1000,
+    },
+  },
 };
