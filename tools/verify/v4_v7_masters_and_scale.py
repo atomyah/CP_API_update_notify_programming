@@ -73,7 +73,7 @@ for label, resource, c in scale:
     if ok:
         cpv.out(f"  {label:<28} = {res['count']}")
 
-cpv.out("\n=== 要件1の対象（惣流アスカ）を絞る条件の確認 ===")
+cpv.out("\n=== 要件1の対象（式波アスカ）を絞る条件の確認 ===")
 c = cpv.cond(cpv.item("CAREER#CAREER_ID", "EQ", "18"))
 ok, res = cpv.safe(lambda: cpv.search("career", token, condition=c, limit=10), "target asuka")
 if ok:

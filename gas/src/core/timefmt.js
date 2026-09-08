@@ -47,6 +47,15 @@ const TimeFmt = (function () {
     return Utilities.formatDate(date, TZ, CP_DATE_FMT);
   }
 
+  /**
+   * その日の 00:00:00 を datetime の検索条件の形式で返す（要件4の走査窓の下限）。
+   * 日付だけを渡しても CP は `00:00:00` として扱うが（実測）、**窓の下限であることを
+   * 読んで分かるように明示する。**
+   */
+  function toCpDayStart(date) {
+    return toCpDate(date) + ' 00:00:00';
+  }
+
   // --- CP から読む（レスポンスの value） ---------------------------------
 
   /** レスポンスの datetime（ISO 8601・秒あり）を Date にする。 */
@@ -98,6 +107,34 @@ const TimeFmt = (function () {
     return toStoreDate(now());
   }
 
+  /**
+   * 通知本文に出す日付・日時（要件4）。
+   *
+   * CP のレスポンスは ISO 8601（`2026-08-05` / `2026-08-09T00:00:00`）だが、
+   * CP の画面表記はスラッシュ区切りなので、**読み手に合わせて `YYYY/MM/DD` に直す。**
+   * datetime の `00:00:00` は落とす（`NEXTACTION_DATE` は日付だけ入力されることが多い）。
+   *
+   * **想定外の形式でも例外にしない。**通知の組み立てで落ちると1サイクル丸ごと失敗する。
+   * 読めなければ受け取った値をそのまま返す。
+   *
+   * @return 値が無ければ null（呼び出し側が「(未設定)」に置き換える）
+   */
+  function toDisplay(value, itemType) {
+    if (value === null || value === undefined) return null;
+    const text = String(value).trim();
+    if (text === '') return null;
+    try {
+      if (itemType === 'datetime') {
+        const stamp = Utilities.formatDate(
+          parseCpDatetime(text), TZ, CP_DATETIME_FMT);
+        return stamp.slice(-8) === '00:00:00' ? stamp.slice(0, 10) : stamp;
+      }
+      return toCpDate(parseCpDate(text));
+    } catch (e) {
+      return text;
+    }
+  }
+
   /** 秒を足し引きした Date を返す（オーバーラップ幅の適用に使う）。 */
   function shiftSeconds(date, seconds) {
     return new Date(date.getTime() + seconds * 1000);
@@ -117,6 +154,7 @@ const TimeFmt = (function () {
     now: now,
     toCpDatetime: toCpDatetime,
     toCpDate: toCpDate,
+    toCpDayStart: toCpDayStart,
     parseCpDatetime: parseCpDatetime,
     parseCpDate: parseCpDate,
     toStore: toStore,
@@ -124,6 +162,7 @@ const TimeFmt = (function () {
     nowStore: nowStore,
     toStoreDate: toStoreDate,
     today: today,
+    toDisplay: toDisplay,
     shiftSeconds: shiftSeconds,
     shiftDays: shiftDays,
   };

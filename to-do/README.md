@@ -10,12 +10,12 @@ Python 版（`app/`）を Google Apps Script へ移植するための作業単�
 | [Phase3](Phase3.md) | 要件1 `career_status` ＋ Slack 通知 | Phase2 | ✅ **完了**（2026-09-05。`runAllTests` 88件通過 / 実環境で通し確認。残1: コード値→ラベルの実機確認） |
 | [Phase4](Phase4.md) | 要件2/3 `progress_flow` | Phase3 | ✅ **完了**（2026-09-06。`runAllTests` 120件通過 / 実環境で通し確認。持ち越した2項目は Phase5 で解消） |
 | [Phase5](Phase5.md) | 運用（トリガー本設定・日次サマリ・通し確認） | Phase4 | ✅ **完了**（2026-09-06。`runAllTests` 148件通過 / 自動運転を実環境で確認。仕様書 11.13節） |
-| [Phase6](Phase6.md) | 要件4 `career_action_watch` ＋ メール送信 | Phase2 | ⬜ 条件付き |
+| [Phase6](Phase6.md) | 要件4 `career_action_watch` ＋ メール送信 | Phase2 | ✅ **完了**（2026-09-08。`runAllTests` 179件通過 / 自動運転を実環境で確認。仕様書 11.14 / 11.15節） |
 
 ## 進め方の原則
 
 - **順番に進める。**Phase3 以降は前の Phase の完了条件が満たされていることが前提。
-  Phase6 だけは Phase2 の後ならいつでも着手できるが、前提確認（6章）が先。
+  Phase6 まで完了。**残るのは要件4を自動運転に載せる確認**（Phase6.md の「残っていること」）。
 - **各 Phase の「完了条件」を満たさずに次へ進まない。**
   特に Phase1・Phase2 は全機能が乗る土台なので、ここが緩いと後で全部やり直しになる。
 - **仕様書（`docs/CP進捗通知_システム仕様書.md`）が唯一の根拠。**

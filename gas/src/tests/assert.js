@@ -173,6 +173,27 @@ const T = (function () {
     };
   }
 
+  /**
+   * MailApp の代わり。送ったメールを覚えるだけで、**1通も外へ出さない。**
+   * **本物のメールを送るテストを書かないこと**（宛先は実在アドレス）。
+   *
+   * @param options { quota: 残りの送信可能数, failWith: 送信時に投げるメッセージ }
+   */
+  function fakeMailApp(options) {
+    const opts = options || {};
+    let quota = opts.quota === undefined ? 100 : opts.quota;
+    return {
+      sent: [],
+      failWith: opts.failWith || null,
+      sendEmail: function (message) {
+        if (this.failWith) throw new Error(this.failWith);
+        quota -= 1;
+        this.sent.push(message);
+      },
+      getRemainingDailyQuota: function () { return quota; },
+    };
+  }
+
   /** LockService の代わり。`acquired` が false なら常に取れない。 */
   function fakeLock(acquired) {
     let released = false;
@@ -188,5 +209,6 @@ const T = (function () {
     assertThrows: assertThrows, run: run, reset: reset,
     fakeProperties: fakeProperties, fakeClock: fakeClock,
     fakeSheets: fakeSheets, fakeLock: fakeLock, fakeScriptApp: fakeScriptApp,
+    fakeMailApp: fakeMailApp,
   };
 })();

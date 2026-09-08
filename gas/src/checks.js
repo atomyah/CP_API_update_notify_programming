@@ -79,6 +79,84 @@ function checkSetup() {
 }
 
 /**
+ * 要件4のメール送信の前提を確かめる（to-do/Phase6.md の「着手前に確認すること」）。
+ * **CP を叩かない。メールも送らない。**
+ *
+ * 見るもの:
+ *
+ * - 管理者アドレス（`MAIL_ADMIN_ADDRESS`）が設定されているか。
+ *   **ドライランの寄せ先**なので、これが無いと `runCareerActionDryRun()` は動かない
+ * - **1日あたりの送信残量。**`MailApp.getRemainingDailyQuota()` の実測値。
+ *   仕様書 11.7節（推測で埋めない）に対する答えがここで取れる
+ * - 送信元エイリアス（`MAIL_FROM_ADDRESS`）の指定有無
+ *
+ * ⚠️ **アドレスそのものはログに出さない**（rules/40-secrets-and-security.md）。
+ * 設定されているかどうかだけを出す。
+ */
+function checkMail() {
+  const notifier = MailNotifier.create();
+  const props = PropertiesService.getScriptProperties();
+  const summary = {
+    admin_address_set: !!notifier.adminAddress(),
+    admin_address_property: Config.mail.adminAddressProperty,
+    from_alias_set: !!props.getProperty(Config.mail.fromAddressProperty),
+    sender_name: Config.mail.senderName,
+    channel_keys: Config.mail.channelKeys,
+    // **実測値。**組織のポリシーで送信そのものが止められている場合は
+    // ここが 0 になるか、getRemainingDailyQuota が例外になる
+    remaining_daily_quota: notifier.remainingQuota(),
+  };
+  Log.info('mail_check', summary);
+  if (!summary.admin_address_set) {
+    Log.warn('mail_admin_address_missing', {
+      property: Config.mail.adminAddressProperty,
+      hint: 'Project Settings > Script Properties. Dry runs refuse to run without it',
+    });
+  }
+  return summary;
+}
+
+/**
+ * テストメールを1通送る。**手で1回だけ実行する。トリガーには登録しない。**
+ *
+ * `MailApp` が組織のポリシーで止められていないかを確かめる唯一の方法
+ * （to-do/Phase6.md の確認項目1）。
+ *
+ * @param to 宛先。**省略時は `MAIL_ADMIN_ADDRESS`。**
+ *           ⚠️ 他人のアドレスを指定しないこと。確認は自分宛てで足りる
+ */
+function sendTestMail(to) {
+  const notifier = MailNotifier.create();
+  const address = to || notifier.adminAddress();
+  if (!MailNotifier.isValidAddress(address)) {
+    throw Errors.config(
+      'no valid address. Set script property "' + Config.mail.adminAddressProperty +
+      '" or pass one to sendTestMail("you@example.com")');
+  }
+  const before = notifier.remainingQuota();
+  notifier.send(Events.notification({
+    watcherId: 'check',
+    resourceId: 'test',
+    eventType: 'test_mail',
+    digest: 'test',
+    channelKey: Config.mail.channelKeys[0],
+    subject: '[CP] テスト送信',
+    body: [
+      'CP進捗通知（要件4）のテスト送信です。',
+      '',
+      'この1通が届いていれば、MailApp からの送信が組織のポリシーで',
+      '止められていないことが確認できます。',
+      '',
+      '送信時刻: ' + TimeFmt.nowStore(),
+    ].join('\n'),
+    to: address,
+  }));
+  const summary = { remaining_before: before, remaining_after: notifier.remainingQuota() };
+  Log.info('test_mail_sent', summary);
+  return summary;
+}
+
+/**
  * トークンバケットの現在値を見る。CP は叩かない。
  * 流量がおかしいと感じたときの確認用。
  */

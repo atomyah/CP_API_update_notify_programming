@@ -164,7 +164,7 @@ function runCoreTests() {
   });
 
   T.test('⚠️ 例外のメッセージにレスポンスボディを載せない', function () {
-    const err = Errors.fromStatus(400, '{"name":"惣流 アスカ"}', 'req-1', '/p');
+    const err = Errors.fromStatus(400, '{"name":"式波 アスカ"}', 'req-1', '/p');
     T.assert(err.message.indexOf('アスカ') < 0, 'response body leaked into the message');
   });
 
@@ -174,7 +174,7 @@ function runCoreTests() {
     // Log は console へ出すだけなので、maskValue の挙動で代表させる
     T.assertEquals(Log.maskValue(null), '<none>');
     T.assertEquals(Log.maskValue([1, 2, 3]), '<list len=3>');
-    T.assert(Log.maskValue('惣流 アスカ').indexOf('アスカ') < 0, 'value leaked');
+    T.assert(Log.maskValue('式波 アスカ').indexOf('アスカ') < 0, 'value leaked');
   });
 
 

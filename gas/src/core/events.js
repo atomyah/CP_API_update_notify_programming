@@ -65,7 +65,11 @@ const Events = (function () {
    *   channelKey  論理的な宛先。**Webhook URL ではない**（notifiers が解決する）
    *   subject     件名。Slack では本文に含めないが、メール（要件4）で使う
    *   body        送信する本文。**組み立て済みで渡す。**再取得しない（rules/20）
-   *   meta        ログ用の補助情報。個人情報を入れないこと
+   *   to          個別の宛先（要件4のメールアドレス）。チャンネルが宛先を決める
+   *               Slack では使わない。**空のまま通知を作らないこと**
+   *               （要件4は宛先が無ければそもそも送らない。仕様書 3.3.6）
+   *   meta        ログ用の補助情報。個人情報を入れないこと。
+   *               **`to` はここに入れない**（dead_letter に載って共有範囲が広がる）
    */
   function notification(fields) {
     const f = fields || {};
@@ -81,6 +85,7 @@ const Events = (function () {
       channelKey: f.channelKey,
       subject: f.subject || '',
       body: f.body || '',
+      to: f.to || null,
       meta: f.meta || {},
     };
   }

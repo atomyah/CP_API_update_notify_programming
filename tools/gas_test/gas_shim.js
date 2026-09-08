@@ -42,6 +42,11 @@ global.LockService = {
 global.UrlFetchApp = {
   fetch: function () { throw new Error('UrlFetchApp must be stubbed in tests'); },
 };
+// メールのテストは偽の MailApp を渡す。本物を送るテストを書かせない
+global.MailApp = {
+  sendEmail: function () { throw new Error('MailApp must be stubbed in tests'); },
+  getRemainingDailyQuota: function () { throw new Error('MailApp must be stubbed in tests'); },
+};
 // トリガーのテストは T.fakeScriptApp() を渡す。本物を触るテストを書かせない
 global.ScriptApp = {
   newTrigger: function () { throw new Error('ScriptApp must be stubbed in tests'); },

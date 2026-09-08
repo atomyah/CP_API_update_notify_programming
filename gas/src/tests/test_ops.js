@@ -37,16 +37,27 @@ function runOpsTests() {
 
   // --- トリガー（setup.js） -------------------------------------------------
 
+  /** 設定上 enabled になっているトリガーの関数名。**期待値を直書きしない。** */
+  function enabledHandlers() {
+    return Config.triggers.filter(function (entry) { return entry.enabled; })
+      .map(function (entry) { return entry.handler; });
+  }
+
   T.test('createTriggers は enabled のものだけ作る', function () {
     const scriptApp = T.fakeScriptApp();
     createTriggers({ scriptApp: scriptApp });
     const handlers = scriptApp.handlers();
-    T.assertEquals(handlers.length, 3, '要件4（enabled: false）まで作っている');
-    T.assert(handlers.indexOf('runProgressFlow') >= 0, '要件2/3 のトリガーが無い');
-    T.assert(handlers.indexOf('runCareerStatus') >= 0, '要件1のトリガーが無い');
-    T.assert(handlers.indexOf('runDailySummary') >= 0, '日次サマリのトリガーが無い');
-    // Phase6 まで関数が存在しない。作ると実行のたびに失敗する
-    T.assertEquals(handlers.indexOf('runCareerAction'), -1);
+    const expected = enabledHandlers();
+    T.assertEquals(handlers.length, expected.length, '止めているトリガーまで作っている');
+    expected.forEach(function (handler) {
+      T.assert(handlers.indexOf(handler) >= 0, handler + ' のトリガーが無い');
+    });
+    // enabled: false のものは作らない（回っていることに気づかないまま流量が増える）
+    Config.triggers.filter(function (entry) { return !entry.enabled; })
+      .forEach(function (entry) {
+        T.assertEquals(handlers.indexOf(entry.handler), -1,
+          entry.handler + ' は止めているのに作られている');
+      });
   });
 
   T.test('⚠️ createTriggers を2回実行してもトリガーが重複しない', function () {
@@ -54,7 +65,8 @@ function runOpsTests() {
     const scriptApp = T.fakeScriptApp();
     createTriggers({ scriptApp: scriptApp });
     createTriggers({ scriptApp: scriptApp });
-    T.assertEquals(scriptApp.handlers().length, 3, 'トリガーが増殖している');
+    T.assertEquals(scriptApp.handlers().length, enabledHandlers().length,
+                   'トリガーが増殖している');
   });
 
   T.test('間隔と時刻が設定どおりに渡る', function () {
@@ -67,6 +79,8 @@ function runOpsTests() {
     // 要件2の許容遅延は5分（仕様書 3.2.8）
     T.assertEquals(byHandler.runProgressFlow.everyMinutes, 5);
     T.assertEquals(byHandler.runCareerStatus.everyMinutes, 15);
+    // 要件4の許容遅延は15分（仕様書 3.3.10）
+    T.assertEquals(byHandler.runCareerAction.everyMinutes, 15);
     T.assertEquals(byHandler.runDailySummary.days, 1);
     T.assertEquals(byHandler.runDailySummary.atHour, 7);
   });
@@ -89,7 +103,7 @@ function runOpsTests() {
     createTriggers({ scriptApp: scriptApp });
     T.assert(scriptApp.handlers().indexOf('someoneElsesJob') >= 0,
              '他の用途のトリガーを消している');
-    T.assertEquals(scriptApp.handlers().length, 4);
+    T.assertEquals(scriptApp.handlers().length, enabledHandlers().length + 1);
   });
 
   T.test('deleteTriggers は自分のぶんだけ消す', function () {
@@ -97,7 +111,7 @@ function runOpsTests() {
     scriptApp.newTrigger('someoneElsesJob').timeBased().everyMinutes(30).create();
     createTriggers({ scriptApp: scriptApp });
     const removed = deleteTriggers({ scriptApp: scriptApp });
-    T.assertEquals(removed.length, 3);
+    T.assertEquals(removed.length, enabledHandlers().length);
     T.assertEquals(scriptApp.handlers().length, 1);
   });
 

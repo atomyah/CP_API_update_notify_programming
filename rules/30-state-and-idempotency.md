@@ -104,6 +104,7 @@ Google Apps Script へ移植する（仕様書 11章）。**SQLite が使えな�
 |---|---|
 | `cursors` | **PropertiesService**（`getScriptProperties()`） |
 | `snapshots` | **スプレッドシート**（1求職者 = 1行、監視項目 = 列） |
+| （要件4の `S30_prev`） | **スプレッドシート**（別シート `id_sets`。同じレイアウト） |
 | `notified` | **スプレッドシート** |
 | `dead_letter` | **スプレッドシート** |
 
@@ -121,6 +122,9 @@ Google Apps Script へ移植する（仕様書 11章）。**SQLite が使えな�
 
 - 予算切れ・時間切れで中断するときは、**`snapshots` も書き戻さない。**
   snapshots だけが進むと差分を取りこぼす（＝通知漏れ）。
+- **要件4の `id_sets`（30日窓の ID 集合）も同じ。**こちらは書き換えると
+  取りこぼしではなく**誤送信**になる（見えなかった ID が次サイクルで「新規登録」に化ける）。
+  走査窓の検索が打ち切られたサイクルでは何も書かない（仕様書 11.14）。
 - 多重実行の防止は `LockService`。
 
 ### ⚠️ `notified` の UNIQUE 制約が失われる

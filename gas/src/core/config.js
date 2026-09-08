@@ -76,8 +76,8 @@ const Config = {
   triggers: [
     { handler: 'runProgressFlow', everyMinutes: 5, enabled: true, note: '要件2/3。許容遅延5分' },
     { handler: 'runCareerStatus', everyMinutes: 15, enabled: true, note: '要件1。許容遅延15分' },
-    // 要件4は Phase6。**関数が存在しないので enabled: false のままにする**
-    { handler: 'runCareerAction', everyMinutes: 15, enabled: false, note: '要件4（Phase6 完了後に true）' },
+    // 要件4。メール送信の実機確認は済んでいる（仕様書 11.14節）
+    { handler: 'runCareerAction', everyMinutes: 15, enabled: true, note: '要件4。許容遅延15分' },
     { handler: 'runDailySummary', atHour: 7, enabled: true, note: '日次サマリ（前日ぶんを ops へ）' },
   ],
 
@@ -144,7 +144,7 @@ const Config = {
     ],
 
     // 監視対象を絞りたくなったらここに検索条件を足す。
-    // 例（惣流アスカだけを見る場合）:
+    // 例（式波アスカだけを見る場合）:
     //   targetCondition: { itemId: 'CAREER#CAREER_ID', searchType: 'EQ', value: '18' }
     targetCondition: null,
 
@@ -208,6 +208,138 @@ const Config = {
         },
       },
     ],
+  },
+
+  /**
+   * 要件4の監視設定。Python 版 config/watchers.yaml の career_action_watch に対応する。
+   * **Python 版には実装が無い**（メール送信がペンディングのため）。GAS が初実装。
+   *
+   * | | |
+   * |---|---|
+   * | 対象 | **担当者が設定されている求職者の対応履歴だけ**（走査量を直接決める） |
+   * | トリガー | **日付3項目の変化のみ。**メモ本文が変わっても通知しない |
+   * | 宛先 | `CAREER#CHARGE_EMAIL`（求職者の担当者）。**空なら送らず件数を数える** |
+   *
+   * ✅ **有効**（2026-09-08）。メール送信の前提は実機で確認済み
+   * （`MailApp` は組織のポリシーで止められていない / 日次上限 1,500通 / 送信元は
+   * スクリプト所有者。仕様書 8.4 / 11.14節）。
+   *
+   * ⚠️ **false に戻すと `execute()` は何もせず抜ける**（`skipped: disabled`）。
+   * 止めたいときはここを false にするか、`deleteTriggers()` でトリガーを外す。
+   * 本物の担当者へ送らずに検知だけ確かめたいときは `runCareerActionDryRun()`
+   * （宛先が管理者へ寄る）。
+   */
+  careerActionWatch: {
+    enabled: true,
+    resource: 'career_action',
+    // 宛先・求職者名は**関連リソース経由**で同じ select から取れる（実測 V-3a）
+    careerResource: 'career',
+    intervalMinutes: 15,          // 最大遅延 15分 + 処理時間（仕様書 3.3.10）
+    priority: 3,
+    budgetPerCycle: 120,
+    bootstrapBudgetPerCycle: 500,
+    // ⚠️ このウォッチャーはカーソルからの相対検索をしない。走査窓は「今日 − N日」の
+    // 絶対値なので、オーバーラップ幅は使わない（3日窓が rules/30 の「要件4は1日」より広い）。
+    // カーソルは「どこまで見終わったか」の目印とコミット点としてだけ使う
+    overlapSeconds: 0,
+
+    /**
+     * 母集団の絞り込み（仕様書 3.3.3）。**走査量を直接決める最重要の設定。**
+     * 担当者が未設定の求職者には通知しない。それなら走査もしない。
+     *
+     * ⚠️ `CAREER#CHARGE_EMAIL` は検索条件に使えない（400。実測）。
+     *    絞り込みは `CAREER#CHARGE_ID ENTERED` を使う。
+     */
+    populationCondition: {
+      itemId: 'CAREER#CHARGE_ID',
+      searchType: 'ENTERED',
+      value: '',
+      // 抹消済みも除きたくなったら and でくくって次を足す（動作確認済み）:
+      //   { itemId: 'CAREER#REGSTATUS_ID', searchType: 'NOT_EQ', value: '5' }
+    },
+
+    // 3つの日付の OR 和集合。**1リクエストで取れることを実測済み**（V-3e）
+    discoveryWindowDays: 30,      // 新規検知の網。ID だけなので広くても安い
+    changeWindowDays: 3,          // 日付変更の検知。select するのでコストに直結
+                                  // 参考: 7日=5.6 / 14日=11 / 30日=24 req/分
+
+    /**
+     * 変化を検知する項目（仕様書 3.3.2）。**ここに無い項目が変わっても通知しない。**
+     * ラベルは通知本文の「変更内容」に出る。schema のラベルは
+     * 「求職者対応：完了日」のように接頭辞が付くので、読みやすい名前を明示する。
+     */
+    triggerItems: [
+      { itemId: 'CAREER_ACTION#ACTION_DATE', labelOverride: '対応日' },
+      { itemId: 'CAREER_ACTION#COMPLETE_DATE', labelOverride: '完了日' },
+      { itemId: 'CAREER_ACTION#NEXTACTION_DATE', labelOverride: '次回コンタクト日' },
+    ],
+    // 「対応完了」を判定する項目。null → 値 になったら「完了」として文面を変える
+    completeItem: 'CAREER_ACTION#COMPLETE_DATE',
+
+    // 通知本文に載せる項目。**トリガーではない**（変わっても通知しない）
+    bodyItems: [
+      'CAREER_ACTION#ACTION_ID',        // アクション種別（MSTACTION でラベル化）
+      'CAREER_ACTION#ACTIONMEMO',       // メモ本文
+      'CAREER_ACTION#ACTIONCHARGE_ID',  // 対応担当（MSTUSER でラベル化）
+    ],
+    // 対応履歴の ID は `{求職者ID}_{対応番号}`。**対応番号は 0 始まり**（実測）
+    identityItems: ['CAREER_ACTION#CAREER_ID', 'CAREER_ACTION#HISTSEQ'],
+    // 求職者名（関連リソース）。宛先と同じ select で取れるので追加コストは無い
+    careerNameItems: ['CAREER#LASTNAME', 'CAREER#FIRSTNAME'],
+    nameTemplate: '{CAREER#LASTNAME} {CAREER#FIRSTNAME}',
+
+    /**
+     * 生値を保存する項目（rules/40-secrets-and-security.md）。
+     * **日付3項目だけ。**「完了日: (未設定) → 2026/08/05」を出すために要る。
+     * メモ本文・氏名・メールアドレスは**保存しない。**
+     */
+    rawValueItems: [
+      'CAREER_ACTION#ACTION_DATE',
+      'CAREER_ACTION#COMPLETE_DATE',
+      'CAREER_ACTION#NEXTACTION_DATE',
+    ],
+    maxItemsInBody: 10,
+
+    notify: {
+      channelKey: 'career_action',
+      // 求職者の担当者。**対応の担当（ACTIONCHARGE_ID）ではない。**
+      // 取り違えると誤送信になる（実測で別人のケースを確認済み。仕様書 3.3.5）
+      toItem: 'CAREER#CHARGE_EMAIL',
+      // 送らない。ただし**黙って捨てない。**件数を数えて日次サマリで報告する
+      // （仕様書 3.3.6）。**業務側の決定なので "skip" 以外は受け付けない**
+      onMissingAddress: 'skip',
+      templates: {
+        created: 'action_created',
+        updated: 'action_updated',
+        completed: 'action_completed',
+      },
+    },
+  },
+
+  /**
+   * メール送信（要件4・notifiers/mail.js）。
+   *
+   * **GAS では `MailApp` を使う。**SMTP サーバもアプリパスワードも要らない
+   * （Python 版がペンディングになっていた理由が GAS では消える。仕様書 8.4）。
+   *
+   * ⚠️ **送信元はスクリプトを承認したアカウント。**別のアドレスから送りたい場合は、
+   * そのアカウントの Gmail に確認済みエイリアスとして登録したうえで
+   * `fromAddressProperty` のプロパティに設定する（未設定なら指定しない）。
+   *
+   * ⚠️ **1日あたりの送信上限がある。**残量は `checkMail()` で見る（checks.js）。
+   * 残量が尽きた状態で送ると例外になるので、送る前に必ず確認する。
+   */
+  mail: {
+    // このチャンネルの通知をメールで送る。Slack の webhookProperties と重ねない
+    channelKeys: ['career_action'],
+    // 宛先未設定・ドライラン・送信失敗の受け皿。**スクリプトプロパティに設定する**
+    // （個人のメールアドレスをリポジトリに書かない。rules/40）
+    adminAddressProperty: 'MAIL_ADMIN_ADDRESS',
+    // 任意。承認アカウントの確認済みエイリアスのみ有効
+    fromAddressProperty: 'MAIL_FROM_ADDRESS',
+    senderName: 'CP進捗通知',
+    // 残りの送信可能数がこれを下回ったら警告ログを出す
+    quotaWarnThreshold: 20,
   },
 
   /**

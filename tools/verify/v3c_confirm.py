@@ -4,7 +4,7 @@ import cpv
 token = cpv.get_token()
 
 cpv.out("=== V-3c: 対応履歴の操作で親の CAREER#UPDATE_DATE が動いたか ===")
-cpv.out("  操作: 16:12 新規登録 / 16:13 内容更新 / 16:14 完了日入力  (対象: 惣流アスカ id=18)")
+cpv.out("  操作: 16:12 新規登録 / 16:13 内容更新 / 16:14 完了日入力  (対象: 式波アスカ id=18)")
 v = cpv.select("career", "18", ["CAREER#LASTNAME", "CAREER#INSERT_DATE", "CAREER#UPDATE_DATE"], token)
 cpv.out(f"\n  career 18 の INSERT_DATE = {v['CAREER#INSERT_DATE']}")
 cpv.out(f"  career 18 の UPDATE_DATE = {v['CAREER#UPDATE_DATE']}")

@@ -72,7 +72,7 @@ function fakeProgressRecords() {
   return {
     progress_history: {},
     progress: {
-      // CLAUDE.md の検証用レコード（惣流 アスカ）に紐づく進捗
+      // CLAUDE.md の検証用レコード（式波 アスカ）に紐づく進捗
       '21': {
         'PROGRESS#CAREER_ID': 18, 'PROGRESS#ORDER_ID': 5, 'PROGRESS#CLIENT_ID': 7,
         'PROGRESS#STATUS_ID': '11', 'PROGRESS#PROGRESS_CHARGE_ID': '1',
@@ -82,7 +82,7 @@ function fakeProgressRecords() {
         'PROGRESS#STATUS_ID': '16', 'PROGRESS#PROGRESS_CHARGE_ID': '1',
       },
     },
-    career: { '18': { 'CAREER#LASTNAME': '惣流', 'CAREER#FIRSTNAME': 'アスカ' } },
+    career: { '18': { 'CAREER#LASTNAME': '式波', 'CAREER#FIRSTNAME': 'アスカ' } },
     order: {
       '5': { 'ORDER#POSITIONNAME': 'ソフトウェアエンジニア' },
       '6': { 'ORDER#POSITIONNAME': 'データ分析' },
@@ -343,7 +343,7 @@ function runProgressFlowTests() {
       T.assertEquals(sent.resourceId, '21_1', '冪等キーが枝番を含んでいない');
       T.assert(sent.body.indexOf('ステータス: (不明) → 社内確認中') >= 0,
                '遷移前後が読めない: ' + sent.body);
-      T.assert(sent.body.indexOf('惣流 アスカ × ソフトウェアエンジニア（株式会社ネルフ）') >= 0,
+      T.assert(sent.body.indexOf('式波 アスカ × ソフトウェアエンジニア（株式会社ネルフ）') >= 0,
                '名前が解決されていない: ' + sent.body);
       T.assert(sent.body.indexOf('進捗担当: 矢原') >= 0, 'コード値のまま出ている: ' + sent.body);
     } finally { cp.restore(); }

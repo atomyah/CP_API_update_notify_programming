@@ -24,7 +24,7 @@ def client() -> FakeCpClient:
     return FakeCpClient(
         resources={
             "career": {
-                "18": {"CAREER#LASTNAME": "惣流", "CAREER#FIRSTNAME": "アスカ"},
+                "18": {"CAREER#LASTNAME": "式波", "CAREER#FIRSTNAME": "アスカ"},
                 "17": {"CAREER#LASTNAME": "葛城", "CAREER#FIRSTNAME": "ミサト"},
             },
             "order": {"6": {"ORDER#POSITIONNAME": "バックエンドエンジニア"}},
@@ -40,7 +40,7 @@ def resolver(client, logger) -> NameResolver:
 
 
 def test_resolves_from_configured_items(resolver):
-    assert resolver.resolve("career", 18) == "惣流 アスカ"
+    assert resolver.resolve("career", 18) == "式波 アスカ"
     assert resolver.resolve("order", 6) == "バックエンドエンジニア"
     assert resolver.resolve("client", 3) == "株式会社ネルフ"
 

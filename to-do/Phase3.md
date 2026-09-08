@@ -43,7 +43,7 @@ Phase2 の器に最初のウォッチャーを載せ、**実環境で1通の通�
 ## 完了条件
 
 - [x] `bootstrapCareerStatus()` で `snapshots` シートが埋まる（通知は出ない）
-- [x] 検証用レコード（惣流 アスカ ID=18 / 葛城 ミサト ID=17）の項目を CP 画面から1つ変更し、
+- [x] 検証用レコード（式波 アスカ ID=18 / 葛城 ミサト ID=17）の項目を CP 画面から1つ変更し、
       **Slack に1通だけ届く**（遷移前後の値が読める形で）
 - [ ] コード値がラベルに変換されている（`selectone` / `select` / `search` がコードのまま出ていない）
       → **単体テストのみ。実機では未確認**（実機で変更したのは `CAREER#48002`（国籍・text）で、
@@ -105,7 +105,7 @@ Phase2 の器に最初のウォッチャーを載せ、**実環境で1通の通�
 3. checkSetup() / checkCareerStatus() / showSlackChannels()
                              → Webhook 4本とも設定済み（career_status / progress_flow / job_intro / ops）
 4. bootstrapCareerStatus()   → 5分間隔の一時トリガーで約20回。bootstrapped: true
-5. CP 画面で ID 18（惣流 アスカ）の国籍を変更
+5. CP 画面で ID 18（式波 アスカ）の国籍を変更
 6. runCareerStatusDryRun()   → ops に [DRY-RUN] 付きで1通。遷移前後が読める
 7. 変更をもう一度 → runCareerStatus() → career_status チャンネルへ1通
 8. もう一度 runCareerStatus()  → events_detected: 1 / events_notified: 0。**2通目は出ない**

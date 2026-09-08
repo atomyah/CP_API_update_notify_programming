@@ -88,6 +88,9 @@ const Runner = (function () {
         cursor: state.getCursor(watcherId),
         budget: budget,
         bootstrap: !!opts.bootstrap,
+        // 通知がドライラン用の宛先へ寄っているか。**送信可否をウォッチャーが
+        // 判断するために要る**（要件4は enabled が false ならドライランしか許さない）
+        dryRun: !!opts.dryRun,
         config: watcher.config || {},
         schema: Schema,
         master: Master,

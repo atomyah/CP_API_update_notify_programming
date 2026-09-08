@@ -16,6 +16,7 @@ const Sheets = (function () {
   const NAMES = {
     SNAPSHOTS: 'snapshots',
     SNAPSHOT_VALUES: 'snapshot_values',
+    ID_SETS: 'id_sets',
     NOTIFIED: 'notified',
     DEAD_LETTER: 'dead_letter',
   };
@@ -33,10 +34,16 @@ const Sheets = (function () {
    * 生値だけ**を持つ（SQLite の `snapshots.value_raw` に相当。仕様書 11.3）。
    * ⚠️ ここには個人情報が平文で入る。対象項目は設定で明示したものだけに限る
    * （rules/40-secrets-and-security.md / core/config.js の rawValueItems）。
+   *
+   * `id_sets` も同じレイアウトで、**前回サイクルで走査窓に入っていた ID の集合**を持つ
+   * （要件4の `S30_prev`。仕様書 11.3 / 3.3.4）。値は項目値ではなく在／不在の印だけで、
+   * 3列目以降は「集合の名前」（例 `discovery_window`）。**書き戻しは snapshots と
+   * 同じコミット点**なので、中断したサイクルでは集合も進まない（仕様書 11.4）。
    */
   const HEADERS = {};
   HEADERS[NAMES.SNAPSHOTS] = ['watcher_id', 'resource_id'];
   HEADERS[NAMES.SNAPSHOT_VALUES] = ['watcher_id', 'resource_id'];
+  HEADERS[NAMES.ID_SETS] = ['watcher_id', 'resource_id'];
   HEADERS[NAMES.NOTIFIED] = ['watcher_id', 'resource_id', 'event_type', 'payload_hash', 'notified_at'];
   HEADERS[NAMES.DEAD_LETTER] = ['created_at', 'watcher_id', 'payload', 'error'];
 

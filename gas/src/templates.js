@@ -28,6 +28,9 @@ const Templates = (function () {
     STATUS_OK: '正常',
     STATUS_PROBLEM: '⚠️ 要確認',
     NO_PROBLEM: '（なし）',
+    // 要件4。宛先が無くて送れなかった件数の見出し。**日次サマリにそのまま出る**
+    // （core/metrics.js の汎用カウンタ名。仕様書 3.3.6）
+    COUNTER_NO_ADDRESS: '担当者未設定で通知できなかった対応履歴',
   };
 
   const TEMPLATES = {
@@ -131,6 +134,77 @@ const Templates = (function () {
         '*{total} 件の変更が検出されました*',
         'うち {suppressed} 件は詳細を省略しました（1サイクルの通知上限 {limit} 件）。',
         '対象リソース: {resources} 件',
+      ].join('\n'),
+    },
+
+    // --- 要件4: 対応履歴の登録・更新・完了（メール）------------------------
+    // **Slack ではなくメールなので、マークダウンの装飾を使わない。**
+    // 使える変数:
+    //   career_name    求職者名        career_id    求職者ID
+    //   resource_id    対応履歴ID（"18_0" 形式）   histseq  対応番号（**0 始まり**）
+    //   action_type    アクション種別（MSTACTION でラベル化）
+    //   action_charge  対応担当（MSTUSER でラベル化）。**宛先の担当者とは別人でありうる**
+    //   action_memo    メモ本文
+    //   changes        変化した日付の一覧（change_line を連ねたもの）
+    //
+    // ⚠️ メール本文には求職者の氏名と対応内容が載る。宛先は担当者1人に限る
+    //    （rules/40-secrets-and-security.md）。
+
+    action_created: {
+      subject: '[CP] {career_name} さんの対応履歴が登録されました',
+      // 新規登録には「前の値」が無い。矢印を出すと `(記録なし) → (未設定)` になって読めない
+      change_line: '  {label}: {new}',
+      body: [
+        '{career_name} さんの対応履歴が登録されました。',
+        '',
+        '求職者   : {career_name} (ID {career_id})',
+        '対応番号 : {histseq}',
+        '種別     : {action_type}',
+        '対応担当 : {action_charge}',
+        '',
+        '日付:',
+        '{changes}',
+        '',
+        '内容:',
+        '{action_memo}',
+      ].join('\n'),
+    },
+
+    action_updated: {
+      subject: '[CP] {career_name} さんの対応履歴が更新されました',
+      change_line: '  {label}: {old} → {new}',
+      body: [
+        '{career_name} さんの対応履歴が更新されました。',
+        '',
+        '求職者   : {career_name} (ID {career_id})',
+        '対応番号 : {histseq}',
+        '種別     : {action_type}',
+        '対応担当 : {action_charge}',
+        '',
+        '変更内容:',
+        '{changes}',
+        '',
+        '内容:',
+        '{action_memo}',
+      ].join('\n'),
+    },
+
+    action_completed: {
+      subject: '[CP] {career_name} さんの対応が完了しました',
+      change_line: '  {label}: {old} → {new}',
+      body: [
+        '{career_name} さんの対応が完了しました。',
+        '',
+        '求職者   : {career_name} (ID {career_id})',
+        '対応番号 : {histseq}',
+        '種別     : {action_type}',
+        '対応担当 : {action_charge}',
+        '',
+        '変更内容:',
+        '{changes}',
+        '',
+        '内容:',
+        '{action_memo}',
       ].join('\n'),
     },
 

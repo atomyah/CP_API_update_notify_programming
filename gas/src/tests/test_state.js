@@ -395,17 +395,17 @@ function runStateTests() {
   return T.run('state');
 }
 
-/** Phase1〜Phase5 のテストをまとめて走らせる。 */
+/** Phase1〜Phase6 のテストをまとめて走らせる。 */
 function runAllTests() {
-  const core = runCoreTests();
-  const state = runStateTests();
-  const watchers = runWatcherTests();
-  const progressFlow = runProgressFlowTests();
-  const ops = runOpsTests();
-  const summary = {
-    total: core.total + state.total + watchers.total + progressFlow.total + ops.total,
-    failed: core.failed + state.failed + watchers.failed + progressFlow.failed + ops.failed,
-  };
+  const suites = [
+    runCoreTests(), runStateTests(), runWatcherTests(),
+    runProgressFlowTests(), runOpsTests(), runCareerActionTests(),
+  ];
+  const summary = { total: 0, failed: 0 };
+  suites.forEach(function (suite) {
+    summary.total += suite.total;
+    summary.failed += suite.failed;
+  });
   Log.info('all_tests_passed', summary);
   return summary;
 }

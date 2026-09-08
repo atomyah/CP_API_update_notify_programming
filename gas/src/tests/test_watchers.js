@@ -37,7 +37,7 @@ function fakeRecords() {
   return {
     // CLAUDE.md の検証用レコードに合わせてある
     '18': {
-      'CAREER#CAREER_ID': 18, 'CAREER#LASTNAME': '惣流', 'CAREER#FIRSTNAME': 'アスカ',
+      'CAREER#CAREER_ID': 18, 'CAREER#LASTNAME': '式波', 'CAREER#FIRSTNAME': 'アスカ',
       'CAREER#48002': '米国', 'CAREER#CNSLSTATUS_ID': '1', 'CAREER#MEMO': '',
     },
     '17': {
@@ -353,7 +353,7 @@ function runWatcherTests() {
       const body = env.notifier.sent[0].body;
       T.assert(body.indexOf('国籍（氏名・生年月日）: 米国 → 日本') >= 0,
                '遷移前後が読めない: ' + body);
-      T.assert(body.indexOf('惣流 アスカ') >= 0, '見出しに名前が出ていない');
+      T.assert(body.indexOf('式波 アスカ') >= 0, '見出しに名前が出ていない');
       T.assert(body.indexOf('CAREER#MEMO') < 0, '変わっていない項目が載っている');
     } finally { cp.restore(); }
   });

@@ -9,6 +9,7 @@
  * | `cursors` | PropertiesService（1ウォッチャー = 1プロパティ。**これがコミット点**） |
  * | `snapshots` | シート。1リソース = 1行、監視項目 = 列（仕様書 11.3） |
  * | `snapshots.value_raw` | 別シート `snapshot_values`。**対象項目を限定する**（仕様書 11.3） |
+ * | （要件4の `S30_prev`） | 別シート `id_sets`。前回の走査窓に居た ID の集合（仕様書 3.3.4） |
  * | `notified` | シート。**UNIQUE 制約が無いのでアプリ側で担保する**（仕様書 11.5） |
  * | `dead_letter` | シート |
  *
@@ -248,6 +249,15 @@ const State = (function () {
     count() {
       this._load();
       return Object.keys(this._index).length;
+    }
+
+    /**
+     * このウォッチャーが持っている resource_id の一覧。
+     * 要件4の「前回の走査窓から外れた ID を落とす」ために使う（仕様書 3.3.4 の G）。
+     */
+    resourceIds() {
+      this._load();
+      return Object.keys(this._index);
     }
 
     get dirty() {
@@ -510,6 +520,16 @@ const State = (function () {
      */
     rawValues(watcherId) {
       return this._set(watcherId, Sheets.NAMES.SNAPSHOT_VALUES);
+    }
+
+    /**
+     * 前回サイクルの ID 集合（要件4の `S30_prev`。仕様書 3.3.4 / 11.3）。
+     *
+     * 「その ID が前回の走査窓に居たか」だけを持つ。**項目値ではない**ので
+     * snapshots とは別のシートに置く。書き戻しは snapshots と同じコミット点。
+     */
+    idSets(watcherId) {
+      return this._set(watcherId, Sheets.NAMES.ID_SETS);
     }
 
     _set(watcherId, sheetName) {

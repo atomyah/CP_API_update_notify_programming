@@ -78,7 +78,7 @@ def _client(histories: dict[str, dict]) -> FakeCpClient:
         resources={
             "progress_history": histories,
             "progress": {"21": _progress()},
-            "career": {"18": {"CAREER#LASTNAME": "惣流", "CAREER#FIRSTNAME": "アスカ"}},
+            "career": {"18": {"CAREER#LASTNAME": "式波", "CAREER#FIRSTNAME": "アスカ"}},
             "order": {"6": {"ORDER#POSITIONNAME": "バックエンドエンジニア"}},
             "client": {"3": {"CLIENT#CLIENTNAME": "株式会社ネルフ"}},
         },
@@ -141,7 +141,7 @@ def test_notifies_transition_with_resolved_names(make_context, watcher):
     # 冪等キーは枝番を含む履歴 ID
     assert sent.resource_id == "21_2"
     assert sent.event_type == "status_changed"
-    assert "惣流 アスカ" in sent.body
+    assert "式波 アスカ" in sent.body
     assert "バックエンドエンジニア" in sent.body
     assert "株式会社ネルフ" in sent.body
     # コード値ではなくラベルで出す

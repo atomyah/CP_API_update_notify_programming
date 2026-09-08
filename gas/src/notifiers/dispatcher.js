@@ -162,15 +162,24 @@ const Dispatcher = (function () {
   }
 
   /**
-   * 既定の一式（Slack のみ）。
+   * 既定の一式（Slack + メール）。
+   *
+   * **チャンネルは重ならない。**Slack は `Config.slack.webhookProperties` の鍵、
+   * メールは `Config.mail.channelKeys` だけを扱う。先に一致した方が送る。
+   *
    * @param options { state, dryRun, notifiers, maxPerCycle }
-   *   dryRun が true なら全通知をドライラン用チャンネルへ寄せる
+   *   dryRun が true なら Slack はドライラン用チャンネルへ、
+   *   メールは管理者アドレスへ寄せる（rules/40-secrets-and-security.md）。
+   *   **メールの寄せ先が設定されていなければ ConfigError**（本物の宛先へ送らせない）
    */
   function create(options) {
     const opts = options || {};
-    const notifiers = opts.notifiers || [SlackNotifier.create({
-      dryRunChannelKey: opts.dryRun ? Config.slack.dryRunChannelKey : null,
-    })];
+    const notifiers = opts.notifiers || [
+      SlackNotifier.create({
+        dryRunChannelKey: opts.dryRun ? Config.slack.dryRunChannelKey : null,
+      }),
+      MailNotifier.create({ dryRun: !!opts.dryRun }),
+    ];
     return new NotificationDispatcher({
       state: opts.state, notifiers: notifiers, maxPerCycle: opts.maxPerCycle,
     });

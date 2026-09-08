@@ -15,12 +15,17 @@
  * 2. checkSetup()              疎通・権限・項目IDの検証（checks.js）
  * 3. checkCareerStatus()       要件1の設定が実環境と合っているか
  *    checkProgressFlow()       要件2/3 の設定が実環境と合っているか
+ *    checkCareerAction()       要件4の設定が実環境と合っているか
+ *    checkMail()               ⚠️ 要件4。**メールが送れるか**（checks.js）
  * 4. bootstrapCareerStatus()   ⚠️ 基準づくり。通知は出ない。完了するまで繰り返す
  *    bootstrapProgressFlow()   ⚠️ 同上（こちらは1回で終わる。リクエストも使わない）
+ *    bootstrapCareerAction()   ⚠️ 同上（3日窓の件数によっては繰り返す）
  * 5. runCareerStatusDryRun()   1サイクル。通知はドライラン用チャンネルへ寄る
  *    runProgressFlowDryRun()
+ *    runCareerActionDryRun()   ⚠️ メールは管理者アドレスへ寄る
  * 6. runCareerStatus()         1サイクル。本来のチャンネルへ送る
  *    runProgressFlow()
+ *    runCareerAction()         ⚠️ **本物の担当者へメールが届く**
  * 7. createTriggers()          自動運転を開始する（冪等。何回実行してもよい）
  * ```
  *
@@ -142,6 +147,76 @@ function checkProgressFlow() {
   });
 }
 
+// --- 要件4（career_action_watch）--------------------------------------------
+
+/**
+ * 要件4を1サイクル実行する。**担当者へメールを送る。**
+ *
+ * ⚠️ **`Config.careerActionWatch.enabled` と関係なく、この関数を呼べば送信される。**
+ * 前提（`checkMail()` / `sendTestMail()`）を通していないうちは
+ * `runCareerActionDryRun()` を使うこと。
+ */
+function runCareerAction() {
+  return Runner.execute(CareerActionWatcher.create());
+}
+
+/**
+ * 要件4を1サイクル実行し、**メールを管理者アドレスへ寄せる。**
+ *
+ * 宛先は CP 上の実在アドレスなので、本番相当のデータで動かす前に必ずこれで確認する
+ * （rules/40-secrets-and-security.md）。本来の宛先は本文の先頭に出る。
+ * **スクリプトプロパティ `MAIL_ADMIN_ADDRESS` が未設定なら ConfigError で止まる。**
+ */
+function runCareerActionDryRun() {
+  return Runner.execute(CareerActionWatcher.create(), { dryRun: true });
+}
+
+/**
+ * 要件4の基準づくり。**通知しない。**
+ *
+ * 作るのは「30日窓の ID 集合」と「3日窓の各レコードの日付3項目」。
+ * **これを実行するまで runCareerAction() は動かない**（既存の対応履歴が
+ * 全部「新規登録」としてメール送信されるのを防ぐため）。
+ *
+ * 3日窓の件数によっては1回の実行で終わらない。
+ * **ログの `bootstrap_paused` が出たら `bootstrap_done` になるまで繰り返す。**
+ */
+function bootstrapCareerAction() {
+  const config = { budgetPerCycle: Config.careerActionWatch.bootstrapBudgetPerCycle };
+  const result = Runner.execute(CareerActionWatcher.create(config), { bootstrap: true });
+  const cursor = State.create().getCursor(CareerActionWatcher.WATCHER_ID);
+  Log.info('bootstrap_state', {
+    watcher_id: CareerActionWatcher.WATCHER_ID,
+    bootstrapped: cursor ? cursor.bootstrapped : false,
+    hint: cursor && cursor.bootstrapped
+      ? 'baseline is ready; runCareerAction() will now send mail'
+      : 'run bootstrapCareerAction() again to continue',
+  });
+  return result;
+}
+
+/**
+ * 要件4の設定が実環境と合っているかを確かめる。**CP を読むだけ。送信しない。**
+ *
+ * - 対応履歴と求職者（関連リソース）の項目が schema に実在するか
+ * - 走査窓の設定が矛盾していないか（変更窓 > 新規窓 は分類が壊れる）
+ * - テンプレートの変数が実在するか / メールの送信先が解決できるか
+ *
+ * **メールが実際に送れるかはここでは分からない。**`checkMail()` で確認する。
+ */
+function checkCareerAction() {
+  const watcher = CareerActionWatcher.create();
+  const state = State.create();
+  return watcher.validate({
+    config: watcher.config,
+    budget: Budget.unlimited(watcher.id),
+    schema: Schema,
+    master: Master,
+    templates: Templates,
+    dispatcher: Dispatcher.create({ state: state }),
+  });
+}
+
 // --- 日次サマリ（仕様書 9.3節）----------------------------------------------
 
 /**
@@ -212,10 +287,17 @@ function summaryDate(value, offsetDays) {
 
 /**
  * 日次サマリに行を出すウォッチャー。**CP は叩かない**（設定を読むだけ）。
- * 要件4（Phase6）を実装したらここに足す。
+ *
+ * **`enabled: false` のものは出さない。**日次サマリは「基準づくりが済んでいない」
+ * ウォッチャーを ⚠️ として報告するので、意図して止めている要件4を含めると
+ * **毎日 ⚠️ が出て、本物の異常が埋もれる**（core/metrics.js の report）。
+ * 有効にした時点で行が現れ、基準づくりが済んでいなければそこで警告が出る。
  */
 function activeWatchers() {
-  return [CareerStatusWatcher.create(), ProgressFlowWatcher.create()];
+  return [CareerStatusWatcher.create(), ProgressFlowWatcher.create(),
+          CareerActionWatcher.create()].filter(function (watcher) {
+    return watcher.enabled;
+  });
 }
 
 /**

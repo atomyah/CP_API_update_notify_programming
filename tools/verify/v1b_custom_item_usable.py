@@ -1,5 +1,5 @@
 """V-1 続き: オリつく項目が検索条件・取得項目として実際に使えるか。
-あわせて検証用求職者（惣流アスカ / 葛城ミサト）の ID を特定する。
+あわせて検証用求職者（式波アスカ / 葛城ミサト）の ID を特定する。
 """
 import json
 import re
@@ -25,7 +25,7 @@ token = cpv.get_token()
 
 cpv.out("\n=== 検証用求職者の ID を特定 ===")
 targets = {}
-for lastname in ("惣流", "葛城"):
+for lastname in ("式波", "葛城"):
     ok, res = cpv.safe(
         lambda ln=lastname: cpv.search("career", token, condition=cpv.eq("CAREER#LASTNAME", ln), limit=100),
         f"search {lastname}",

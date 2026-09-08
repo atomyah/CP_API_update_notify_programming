@@ -61,7 +61,7 @@ nested = {
     "items": [
         {"itemId": "CAREER#UPDATE_DATE", "searchType": "GE", "value": "2026-01-01T00:00:00"},
         {"compoundType": "or", "items": [
-            {"itemId": "CAREER#LASTNAME", "searchType": "EQ", "value": "惣流"},
+            {"itemId": "CAREER#LASTNAME", "searchType": "EQ", "value": "式波"},
             {"itemId": "CAREER#LASTNAME", "searchType": "EQ", "value": "葛城"},
         ]},
     ],

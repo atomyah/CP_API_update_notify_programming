@@ -31,7 +31,7 @@ if ok:
 cpv.out("\n=== V-3b: search の condition に CAREER#* を使えるか ===")
 probes = [
     ("CAREER#UPDATE_DATE GE", cpv.cond(cpv.item("CAREER#UPDATE_DATE", "GE", "2026/01/01 00:00:00"))),
-    ("CAREER#LASTNAME EQ", cpv.cond(cpv.item("CAREER#LASTNAME", "EQ", "惣流"))),
+    ("CAREER#LASTNAME EQ", cpv.cond(cpv.item("CAREER#LASTNAME", "EQ", "式波"))),
     ("CAREER#CHARGE_ID EQ", cpv.cond(cpv.item("CAREER#CHARGE_ID", "EQ", "7"))),
 ]
 b_ok = False
@@ -61,7 +61,7 @@ cpv.out("     CP の画面操作が必要なため、別途手順を提示する
 
 cpv.out("\n=== 参考: 他リソースでも関連リソースが使えるか ===")
 rel = [
-    ("career_workexperience", "CAREER#LASTNAME", "EQ", "惣流"),
+    ("career_workexperience", "CAREER#LASTNAME", "EQ", "式波"),
     ("order", "CLIENT#CLIENTNAME", "ENTERED", ""),
     ("department", "CLIENT#CLIENTNAME", "ENTERED", ""),
 ]

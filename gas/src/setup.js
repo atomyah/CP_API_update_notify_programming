@@ -124,6 +124,7 @@ function initSheets() {
     created: created,
     snapshots_rows: Sheets.dataRowCount(Sheets.NAMES.SNAPSHOTS),
     snapshot_values_rows: Sheets.dataRowCount(Sheets.NAMES.SNAPSHOT_VALUES),
+    id_sets_rows: Sheets.dataRowCount(Sheets.NAMES.ID_SETS),
     notified_rows: Sheets.dataRowCount(Sheets.NAMES.NOTIFIED),
     dead_letter_rows: Sheets.dataRowCount(Sheets.NAMES.DEAD_LETTER),
   });
@@ -137,7 +138,8 @@ function initSheets() {
 function showState(watcherIds) {
   const state = State.create();
   const ids = watcherIds ||
-    [CareerStatusWatcher.WATCHER_ID, ProgressFlowWatcher.WATCHER_ID, DummyWatcher.WATCHER_ID];
+    [CareerStatusWatcher.WATCHER_ID, ProgressFlowWatcher.WATCHER_ID,
+     CareerActionWatcher.WATCHER_ID, DummyWatcher.WATCHER_ID];
   ids.forEach(function (watcherId) {
     const cursor = state.getCursor(watcherId);
     Log.info('watcher_state', {
@@ -148,9 +150,12 @@ function showState(watcherIds) {
       consecutive_failures: state.getFailureCount(watcherId),
       snapshot_rows: state.snapshots(watcherId).count(),
       raw_value_rows: state.rawValues(watcherId).count(),
+      // 要件4だけが使う。前回の30日窓に居た対応履歴の件数
+      id_set_rows: state.idSets(watcherId).count(),
     });
   });
   Log.info('sheet_rows', {
+    id_sets_rows: Sheets.dataRowCount(Sheets.NAMES.ID_SETS),
     notified_rows: Sheets.dataRowCount(Sheets.NAMES.NOTIFIED),
     dead_letter_rows: Sheets.dataRowCount(Sheets.NAMES.DEAD_LETTER),
   });

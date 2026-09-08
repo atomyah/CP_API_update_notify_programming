@@ -65,11 +65,11 @@ def test_snapshot_round_trip_keeps_type(store):
 
 def test_snapshot_defaults_to_hash_only(store):
     """既定は生値を保存しない（`rules/40-secrets-and-security.md`）。"""
-    store.put_snapshot("w", "18", "CAREER#LASTNAME", "惣流", keep_raw=False)
+    store.put_snapshot("w", "18", "CAREER#LASTNAME", "式波", keep_raw=False)
     snap = store.get_snapshots("w", "18")["CAREER#LASTNAME"]
     assert snap.value_raw is None
     assert snap.has_raw is False
-    assert snap.value_hash == value_hash("惣流")
+    assert snap.value_hash == value_hash("式波")
 
 
 def test_cursor_is_per_watcher(store):

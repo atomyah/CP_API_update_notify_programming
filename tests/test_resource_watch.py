@@ -45,7 +45,7 @@ CONFIG_ALL = dict(BASE, watched_items="*", exclude_items=["CAREER#LAST_LOGIN"])
 def _record(**overrides):
     base = {
         "CAREER#CAREER_ID": 18,
-        "CAREER#LASTNAME": "惣流",
+        "CAREER#LASTNAME": "式波",
         "CAREER#FIRSTNAME": "アスカ",
         "CAREER#48002": "米国",
         "CAREER#REGSTATUS_ID": "2",
@@ -187,7 +187,7 @@ def test_change_is_notified_with_labels(watcher, make_context, client):
     assert result.events_notified == 1
     body = notifier.sent[0].body
     assert "未対応 → 面談待ち" in body      # コード値ではなくラベル
-    assert "惣流 アスカ" in body
+    assert "式波 アスカ" in body
     assert "求職者" in body
 
 

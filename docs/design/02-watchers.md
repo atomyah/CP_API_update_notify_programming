@@ -52,7 +52,7 @@
 `career` は関連リソースを持たないため、絞り込みは `CAREER#*` の条件だけで書く。
 YAML の `target.condition` を CP の検索条件としてそのまま渡す。
 
-**PoC の対象は惣流アスカ（求職者ID 18）のみ**（B-1 の回答）。
+**PoC の対象は式波アスカ（求職者ID 18）のみ**（B-1 の回答）。
 `CAREER#CAREER_ID EQ 18` で絞る。`UPDATE_DATE GE` との複合条件が動くことは実測済み。
 
 対象を広げるときは YAML の `target.condition` を書き換えるだけでよい
@@ -83,7 +83,7 @@ watchers:
         items:
           - itemId: "CAREER#CAREER_ID"
             searchType: "EQ"
-            value: "18"          # 惣流アスカ
+            value: "18"          # 式波アスカ
     watched_items:
       # 値の変化を検知する項目。値は限定しない（変わったら通知）
       - item_id: "CAREER#48002"          # オリつく項目「国籍（氏名・生年月日）」
@@ -681,9 +681,9 @@ G. snapshots を日付3項目だけで更新（本文は保存しない）
 `select` で同時に取得済みなので追加コストはない。
 
 ```
-件名: [CP] 惣流アスカ さんの対応履歴が更新されました
+件名: [CP] 式波アスカ さんの対応履歴が更新されました
 
-求職者   : 惣流 アスカ (ID 18)
+求職者   : 式波 アスカ (ID 18)
 対応番号 : 0
 種別     : 電話                      ← ACTION_ID をマスタでラベル化
 対応担当 : 【BL】矢原アトム            ← ACTIONCHARGE_ID をマスタでラベル化

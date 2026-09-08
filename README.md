@@ -11,24 +11,29 @@ Webhook もイベント通知も存在しないため、全要件がポーリン
 | 要件1 | 求職者の項目（オリつく項目を含む229件）が変わったら Slack へ | ✅ 稼働 |
 | 要件2 | 進捗フローが進行したら Slack へ | ✅ 稼働 |
 | 要件3 | 「求人紹介OK」を専用チャンネルへ | ✅ 稼働（要件2と同一データソース） |
-| 要件4 | 対応履歴の登録・更新・完了を担当者へメール | ⏸ メール送信がペンディング |
+| 要件4 | 対応履歴の登録・更新・完了を担当者へメール | ✅ 稼働（`MailApp`） |
 
 ## 実装
 
 | | |
 |---|---|
 | `app/` | **Python 版。**要件1〜3 が実装済み・実環境で動作確認済み |
-| `gas/src/` | **Google Apps Script 版（移植先）。**要件1〜3 が自動運転中 |
+| `gas/src/` | **Google Apps Script 版（移植先）。**要件1〜4 が自動運転中（トリガー4本） |
 
 GAS 版は1つのスプレッドシートのコンテナバインドスクリプトで、`clasp push` が唯一の反映経路。
-状態は `cursors` を PropertiesService、`snapshots` / `notified` / `dead_letter` をシートに持つ。
+状態は `cursors` を PropertiesService、`snapshots` / `id_sets` / `notified` / `dead_letter` を
+シートに持つ。
+
+**要件4のメールは `MailApp` で送る**（Python 版がペンディングだった SMTP の前提が
+GAS では消える）。2026-09-08 に実機で送受信を確認済み（日次上限 1,500通）。
+手順は [`to-do/Phase6.md`](to-do/Phase6.md)。
 
 ```powershell
 py -3 -m pytest tests -q            # Python 版の単体テスト（117件）
-node tools/gas_test/run_tests.js    # GAS 版の単体テスト（148件。clasp push 不要）
+node tools/gas_test/run_tests.js    # GAS 版の単体テスト（179件。clasp push 不要）
 ```
 
-どちらのテストも **CP API・Slack・本番のシートを一切叩かない。**
+どちらのテストも **CP API・Slack・メール・本番のシートを一切叩かない。**
 
 ## 設計上の最重要制約
 

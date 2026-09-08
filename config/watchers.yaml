@@ -40,7 +40,7 @@ watchers:
     name_template: "{CAREER#LASTNAME} {CAREER#FIRSTNAME}"
 
     # 監視対象を絞りたくなったら target.condition を足す。
-    # 例（惣流アスカだけを見る場合）:
+    # 例（式波アスカだけを見る場合）:
     # target:
     #   condition:
     #     compoundType: and
