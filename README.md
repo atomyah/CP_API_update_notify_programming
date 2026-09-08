@@ -1,6 +1,6 @@
 # 特定の進捗が動いたら通知がどこかに来る仕組み
 
-
+仕様・設計・作業ルールは [`docs/CP進捗通知_システム仕様書.md`](docs/CP進捗通知_システム仕様書.md)（**唯一の根拠。**GAS 版は11章）/ [`docs/design/`](docs/design/) / [`rules/`](rules/) / [`CLAUDE.md`](CLAUDE.md)。
 
 ## 使い方
 
